@@ -27,12 +27,16 @@
 
     private VisitorModel Model { get; set; } = new();
 
+    private string _oldQR = string.Empty;
+
     private string Title => Visitor is null ? "Add Visitor" : "Edit Visitor";
 
     protected override void OnInitialized()
     {
         if (Visitor != null)
         {
+            _oldQR = Visitor.QRCode;
+
             Model = new VisitorModel
             {
                 Id = Visitor.Id,
@@ -51,6 +55,6 @@
             return;
         }
 
-        MudDialog.Close(DialogResult.Ok(Model));
+        MudDialog.Close(DialogResult.Ok((Model, _oldQR)));
     }
 }

@@ -69,6 +69,7 @@ a, .btn-link {
 
 canvas {
     aspect-ratio: auto 1 / 1 !important;
+    border-radius: 16px;
 }
 
 .mud-toolbar { 

@@ -91,7 +91,7 @@
         var dialog = await _dialogService.ShowAsync<VisitorDialog>("Add Visitor", options);
         var result = await dialog.Result;
 
-        if (!result?.Canceled is true && result?.Data is VisitorModel vm)
+        if (!result?.Canceled is true && result?.Data is (VisitorModel vm, string old))
         {
             await _qrCodeService.AddVisitorAsync(vm);
             await LoadAsync();
@@ -106,9 +106,9 @@
         var dialog = await _dialogService.ShowAsync<VisitorDialog>("Edit Visitor", parameters, options);
         var result = await dialog.Result;
 
-        if (!result?.Canceled is true && result?.Data is VisitorModel vm)
+        if (!result?.Canceled is true && result?.Data is (VisitorModel vm, string oldQR))
         {
-            await _qrCodeService.UpdateVisitorAsync(vm);
+            await _qrCodeService.UpdateVisitorAsync(vm, oldQR);
             await LoadAsync();
             _snackbar.Add("Visitor updated.", Severity.Success);
         }

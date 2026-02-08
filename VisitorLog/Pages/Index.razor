@@ -2,6 +2,7 @@
 
 @inject IJSRuntime JS
 @using ReactorBlazorQRCodeScanner
+@using VisitorLog.Models
 
 
 <PageTitle>Scanner</PageTitle>
@@ -10,13 +11,13 @@
 {
         <MudStack AlignItems="AlignItems.Center" Class="px-2" Spacing="2" Style="margin-top: 50px;">
             <MudText Typo="Typo.button">SCAN QR CODE</MudText>
-            <QRCodeScanner/>
-            <Logs />
+            <QRCodeScanner LoadingMessage="Scanning..."/>
+            <Logs @ref="logsRef"/>
         </MudStack>
    
 } else
 {
-    <Visitor /> 
+    <Visitor VisitorModel="_currentVisitor" OnAdd="Refresh"/> 
 }
 
 @code {
@@ -25,6 +26,8 @@
     private Action<string>? _onQrCodeScanAction;
 
     private static bool _found;
+    private VisitorModel? _currentVisitor = new();
+    private Logs? logsRef;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -38,9 +41,25 @@
         }
     }
 
+    private async Task Refresh()
+    {
+        await logsRef!.LoadAsync();
+
+        _navigationManager.NavigateTo("/", true);
+
+        _found = false;
+
+        await InvokeAsync(StateHasChanged);
+
+    }
+
     private async Task OnQrCodeScan(string code)
     {
-        Console.WriteLine($"OnQrCodeScan {code}");
+        Console.WriteLine($"QR CODE - {code}");
+
+        _currentVisitor = await _qrCodeService.GetVisitor(code);
+
+        if (_currentVisitor is null) return;
 
         _found = true;
 

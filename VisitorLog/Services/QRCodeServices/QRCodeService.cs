@@ -40,11 +40,13 @@ namespace VisitorLog.Services.QRCodeServices
             }
         }
 
-        public async Task UpdateVisitorAsync(VisitorModel visitor)
+        public async Task UpdateVisitorAsync(VisitorModel visitor, string oldQR)
         {
-            if (ListOfVisitor.TryGetValue(visitor.QRCode, out var current)) {
+            if (ListOfVisitor.TryGetValue(oldQR, out var _)) {
 
-                current = visitor;
+                ListOfVisitor.Remove(oldQR);
+
+                ListOfVisitor.TryAdd(visitor.QRCode, visitor);
 
                 await UpdateVisitorsAsync();
 
@@ -56,6 +58,14 @@ namespace VisitorLog.Services.QRCodeServices
         public async Task UpdateVisitorsAsync()
         {
             await _LocalStorageProvider.SetItemAsync(ListKey, ListOfVisitor);
+        }
+
+        public async Task<VisitorModel?> GetVisitor(string qrcode)
+        {
+            await GetVisitorsAsync();
+
+            return ListOfVisitor.TryGetValue(qrcode, out var visitor) ? visitor: null;
+            
         }
     }
 }

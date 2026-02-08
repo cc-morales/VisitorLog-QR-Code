@@ -6,6 +6,7 @@ using MudBlazor.Services;
 using VisitorLog.Services.LocalStrorageService;
 using VisitorLog.Services.QRCodeServices;
 using VisitorLog.Services.Auth;
+using VisitorLog.Services.VisitorLogService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +25,7 @@ builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredServ
 // app services
 builder.Services.AddScoped<ILocalStorageProvider, LocalStorageProvider>();
 builder.Services.AddScoped<IQRCodeService, QRCodeService>();
+builder.Services.AddScoped<IVisitorLogService, VisitorLogService>();
 
 var app = builder.Build();
 
