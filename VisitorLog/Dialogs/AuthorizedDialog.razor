@@ -1,0 +1,33 @@
+﻿@using MudBlazor
+@inherits LayoutComponentBase
+
+<MudDialog>
+    <DialogContent>
+        <MudTextField @bind-Value="Username" Label="Username" Variant="Variant.Outlined" Class="mt-4" />
+        <MudTextField @bind-Value="Password" Label="Password" InputType="InputType.Password" Variant="Variant.Outlined" Class="mt-2" />
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Color="Color.Default" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Authorized">Authorized</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+
+    private string Username { get; set; } = string.Empty;
+    private string Password { get; set; } = string.Empty;
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private void Authorized()
+    {
+        bool ok = Username == "admin" && Password == "admin";
+
+        MudDialog.Close(DialogResult.Ok(ok));
+    }
+}

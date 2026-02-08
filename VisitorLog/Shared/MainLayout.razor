@@ -1,0 +1,55 @@
+﻿@inherits LayoutComponentBase
+
+@* Required *@
+<MudThemeProvider />
+<MudPopoverProvider />
+
+@* Needed for dialogs *@
+<MudDialogProvider />
+
+@* Needed for snackbars *@
+<MudSnackbarProvider />
+
+<PageTitle>VisitorLog</PageTitle>
+
+<div class="page">
+    <MudAppBar style="with: 100%;">
+        <MudText Typo="Typo.h6">Visitor Log</MudText>
+        <MudSpacer/>
+        <MudButton StartIcon="@Icons.Material.Filled.QrCode" Color="Color.Warning" OnClick="RegisterQrClicked">Register QR</MudButton>
+    </MudAppBar>
+    <main>
+        
+        <article class="container d-flex justify-content-center content px-4 overflow-hidden" style="height: 100vh;">
+            @Body
+        </article>
+    </main>
+</div>
+
+@code {
+    private async Task RegisterQrClicked()
+    {
+        bool authorized = await ShowAuthorizeDialogAsync();
+
+
+    }
+
+    private async Task<bool> ShowAuthorizeDialogAsync()
+    {
+        var options = new DialogOptions
+        {
+            CloseButton = false,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            BackdropClick = false
+        };
+
+        var dialog = await _dialogService.ShowAsync<AuthorizedDialog>("Authorize", options);
+        var result = await dialog.Result;
+
+        if (result?.Canceled is true)
+            return false;
+
+        return result?.Data is bool b && b;
+    }
+}

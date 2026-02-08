@@ -1,0 +1,51 @@
+﻿@page "/"
+
+@inject IJSRuntime JS
+@using ReactorBlazorQRCodeScanner
+
+
+<PageTitle>Scanner</PageTitle>
+
+@if (!_found)
+{
+        <MudStack AlignItems="AlignItems.Center" Class="px-2" Spacing="2" Style="margin-top: 50px;">
+            <MudText Typo="Typo.button">SCAN QR CODE</MudText>
+            <QRCodeScanner/>
+            <Logs />
+        </MudStack>
+   
+} else
+{
+    <Visitor /> 
+}
+
+@code {
+
+    private QRCodeScannerJsInterop? _qrCodeScannerJsInterop;
+    private Action<string>? _onQrCodeScanAction;
+
+    private static bool _found;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _onQrCodeScanAction = async (code) => await OnQrCodeScan(code);
+
+            _qrCodeScannerJsInterop = new QRCodeScannerJsInterop(JS);
+
+            await _qrCodeScannerJsInterop.Init(_onQrCodeScanAction);
+        }
+    }
+
+    private async Task OnQrCodeScan(string code)
+    {
+        Console.WriteLine($"OnQrCodeScan {code}");
+
+
+
+        _found = true;
+
+        await InvokeAsync(StateHasChanged);
+    }
+}
