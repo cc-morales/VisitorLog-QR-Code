@@ -30,6 +30,8 @@ namespace VisitorLog.Services.QRCodeServices
         {
             var results = await localStorageProvider.GetItemAsync<List<VisitorModel>>(ListKey);
 
+            results ??= [];
+
             return ListOfVisitor = results.ToDictionary( c => c.QRCode, c => c);
         }
 

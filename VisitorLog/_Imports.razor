@@ -8,8 +8,10 @@
 @using Microsoft.JSInterop
 @using VisitorLog
 @using VisitorLog.Services.LocalStrorageService
+@using VisitorLog.Services.QRCodeServices
 @using VisitorLog.Shared
 @using VisitorLog.Dialogs
+@using VisitorLog.Services.Auth
 
 @using MudBlazor
 @using Blazored.LocalStorage
@@ -17,3 +19,6 @@
 @inject ILocalStorageService _localStorage
 @inject ILocalStorageProvider _localStoragedProvider
 @inject IDialogService _dialogService
+@inject IQRCodeService _qrCodeService
+@inject SimpleAuthStateProvider _authService
+@inject NavigationManager _navigationManager

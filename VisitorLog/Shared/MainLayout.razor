@@ -1,5 +1,9 @@
 ﻿@inherits LayoutComponentBase
 
+@inject IDialogService _dialogService
+@inject SimpleAuthStateProvider _authProvider
+@inject ISnackbar _snackbar
+
 @* Required *@
 <MudThemeProvider />
 <MudPopoverProvider />
@@ -29,9 +33,20 @@
 @code {
     private async Task RegisterQrClicked()
     {
-        bool authorized = await ShowAuthorizeDialogAsync();
+        var authorized = await ShowAuthorizeDialogAsync();
 
+        if (authorized)
+        {
+            await _authProvider.SignInAsync("admin");
 
+            _navigationManager.NavigateTo("/visitors");
+
+            _snackbar.Add("Authorized. You are signed in.", Severity.Success);
+        }
+        else
+        {
+            _snackbar.Add("Authorization failed or cancelled.", Severity.Warning);
+        }
     }
 
     private async Task<bool> ShowAuthorizeDialogAsync()
@@ -47,8 +62,7 @@
         var dialog = await _dialogService.ShowAsync<AuthorizedDialog>("Authorize", options);
         var result = await dialog.Result;
 
-        if (result?.Canceled is true)
-            return false;
+        if (result?.Canceled is true) return false;
 
         return result?.Data is bool b && b;
     }

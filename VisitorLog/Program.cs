@@ -1,9 +1,11 @@
 using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.Components.Authorization;
 using MudBlazor.Services;
 using VisitorLog.Services.LocalStrorageService;
 using VisitorLog.Services.QRCodeServices;
+using VisitorLog.Services.Auth;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,7 +15,13 @@ builder.Services.AddBlazoredLocalStorage();
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
-builder.Services.AddBlazoredLocalStorage();
+
+// auth state provider registration
+builder.Services.AddAuthorizationCore();
+builder.Services.AddScoped<SimpleAuthStateProvider>();
+builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<SimpleAuthStateProvider>());
+
+// app services
 builder.Services.AddScoped<ILocalStorageProvider, LocalStorageProvider>();
 builder.Services.AddScoped<IQRCodeService, QRCodeService>();
 
@@ -23,7 +31,6 @@ var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
