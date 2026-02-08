@@ -4,8 +4,11 @@
 @inherits LayoutComponentBase
 
 <MudDialog>
-    <DialogContent>
+    <TitleContent>
         <MudText Typo="Typo.h6">@Title</MudText>
+    </TitleContent>
+    <DialogContent>
+      
 
         <MudTextField T="string" Label="QR Code" @bind-Value="Model.QRCode" Variant="Variant.Outlined" Class="mt-4" />
         <MudTextField T="string" Label="Visitor Alias" @bind-Value="Model.VisitorAlias" Variant="Variant.Outlined" Class="mt-2" />

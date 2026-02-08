@@ -28,11 +28,16 @@ namespace VisitorLog.Services.QRCodeServices
 
         public async Task<Dictionary<string, VisitorModel>> GetVisitorsAsync()
         {
-            var results = await localStorageProvider.GetItemAsync<List<VisitorModel>>(ListKey);
+            try
+            {
+                ListOfVisitor = await localStorageProvider.GetItemAsync<Dictionary<string, VisitorModel>>(ListKey);
 
-            results ??= [];
-
-            return ListOfVisitor = results.ToDictionary( c => c.QRCode, c => c);
+                return ListOfVisitor ??= [];
+            } catch
+            {
+                await localStorageProvider.SetItemAsync(ListKey, new List<VisitorModel>());
+                return [];
+            }
         }
 
         public async Task UpdateVisitorAsync(VisitorModel visitor)

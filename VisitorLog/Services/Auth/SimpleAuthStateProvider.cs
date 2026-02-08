@@ -8,7 +8,7 @@ namespace VisitorLog.Services.Auth
 {
     public class SimpleAuthStateProvider : AuthenticationStateProvider, IDisposable
     {
-        private readonly TimeSpan _defaultTimeout = TimeSpan.FromSeconds(30);
+        private readonly TimeSpan _defaultTimeout = TimeSpan.FromMinutes(30);
         private ClaimsPrincipal _anonymous = new(new ClaimsIdentity());
         private ClaimsPrincipal _current;
         private Timer? _logoutTimer;
