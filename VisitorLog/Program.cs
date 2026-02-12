@@ -1,11 +1,17 @@
 using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
+using System;
+using VisitorLog.ApplicationDBContextService;
 using VisitorLog.Services.Auth;
 
 var builder = WebApplication.CreateBuilder(args);
+
+
+builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("default")));
 
 builder.Services.AddMudServices();
 builder.Services.AddBlazoredLocalStorage();
