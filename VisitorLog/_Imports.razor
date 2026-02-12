@@ -7,9 +7,6 @@
 @using Microsoft.AspNetCore.Components.Web.Virtualization
 @using Microsoft.JSInterop
 @using VisitorLog
-@using VisitorLog.Services.LocalStrorageService
-@using VisitorLog.Services.QRCodeServices
-@using VisitorLog.Services.VisitorLogService
 @using VisitorLog.Shared
 @using VisitorLog.Dialogs
 @using VisitorLog.Services.Auth
@@ -19,9 +16,6 @@
 @using Humanizer
 
 @inject ILocalStorageService _localStorage
-@inject ILocalStorageProvider _localStoragedProvider
 @inject IDialogService _dialogService
-@inject IQRCodeService _qrCodeService
-@inject IVisitorLogService _visitorLogService 
 @inject SimpleAuthStateProvider _authService
 @inject NavigationManager _navigationManager

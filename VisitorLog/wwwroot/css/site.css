@@ -75,3 +75,32 @@ canvas {
 .mud-toolbar { 
     width: 100% !important;
 }
+
+.custom-button {
+    background-color: #3a0000;
+    color: white;
+    border-radius: 50px;
+    border-color: white;
+    border-width: 4px;
+    height: 40px;
+    width: auto !important;
+    min-width: 120px;
+    flex-grow: 0;
+}
+
+.custom-button .mud-nav-link {
+    padding: 4px 16px !important;
+}
+
+.custom-button .mud-nav-link-text {
+    margin-left: unset !important;
+    margin-inline-start: unset !important;
+}
+
+.mud-toolbar {
+    background-color: #940018 !important;
+}
+
+.mud-nav-link-text {
+    text-align: center !important;
+}

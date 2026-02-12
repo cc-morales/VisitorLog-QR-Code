@@ -71,11 +71,11 @@
 
     private async Task LoadAsync()
     {
-        var dict = await _qrCodeService.GetVisitorsAsync();
+        // var dict = await _qrCodeService.GetVisitorsAsync();
 
-        dict ??= [];
+        // dict ??= [];
 
-        items = dict.Values.ToList();
+        // items = dict.Values.ToList();
 
         StateHasChanged();
     }
@@ -93,7 +93,7 @@
 
         if (!result?.Canceled is true && result?.Data is (VisitorModel vm, string old))
         {
-            await _qrCodeService.AddVisitorAsync(vm);
+            // await _qrCodeService.AddVisitorAsync(vm);
             await LoadAsync();
             _snackbar.Add("Visitor added.", Severity.Success);
         }
@@ -108,7 +108,7 @@
 
         if (!result?.Canceled is true && result?.Data is (VisitorModel vm, string oldQR))
         {
-            await _qrCodeService.UpdateVisitorAsync(vm, oldQR);
+            // await _qrCodeService.UpdateVisitorAsync(vm, oldQR);
             await LoadAsync();
             _snackbar.Add("Visitor updated.", Severity.Success);
         }
@@ -119,7 +119,7 @@
         bool? accept = await ConfirmDelete();
         if (accept is true)
         {
-            await _qrCodeService.DeleteVisitorAsync(v);
+            // await _qrCodeService.DeleteVisitorAsync(v);
             await LoadAsync();
             _snackbar.Add("Visitor deleted.", Severity.Info);
         }

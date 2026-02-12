@@ -3,10 +3,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.Authorization;
 using MudBlazor.Services;
-using VisitorLog.Services.LocalStrorageService;
-using VisitorLog.Services.QRCodeServices;
 using VisitorLog.Services.Auth;
-using VisitorLog.Services.VisitorLogService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,11 +18,6 @@ builder.Services.AddServerSideBlazor();
 builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<SimpleAuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<SimpleAuthStateProvider>());
-
-// app services
-builder.Services.AddScoped<ILocalStorageProvider, LocalStorageProvider>();
-builder.Services.AddScoped<IQRCodeService, QRCodeService>();
-builder.Services.AddScoped<IVisitorLogService, VisitorLogService>();
 
 var app = builder.Build();
 

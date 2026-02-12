@@ -5,7 +5,7 @@
 @using VisitorLog.Models
 
 
-<PageTitle>Scanner</PageTitle>
+@* <PageTitle>Scanner</PageTitle>
 
 @if (!_found)
 {
@@ -18,51 +18,53 @@
 } else
 {
     <Visitor VisitorModel="_currentVisitor" OnAdd="Refresh"/> 
-}
+} *@
 
 @code {
 
-    private QRCodeScannerJsInterop? _qrCodeScannerJsInterop;
-    private Action<string>? _onQrCodeScanAction;
+    // private QRCodeScannerJsInterop? _qrCodeScannerJsInterop;
+    // private Action<string>? _onQrCodeScanAction;
 
-    private static bool _found;
-    private VisitorModel? _currentVisitor = new();
-    private Logs? logsRef;
+    // private static bool _found;
+    // private VisitorModel? _currentVisitor = new();
+    // private Logs? logsRef;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            _onQrCodeScanAction = async (code) => await OnQrCodeScan(code);
+    // protected override async Task OnAfterRenderAsync(bool firstRender)
+    // {
+    //     if (firstRender)
+    //     {
+    //         _onQrCodeScanAction = async (code) => await OnQrCodeScan(code);
 
-            _qrCodeScannerJsInterop = new QRCodeScannerJsInterop(JS);
+    //         _qrCodeScannerJsInterop = new QRCodeScannerJsInterop(JS);
 
-            await _qrCodeScannerJsInterop.Init(_onQrCodeScanAction);
-        }
-    }
+    //         await _qrCodeScannerJsInterop.Init(_onQrCodeScanAction);
+    //     }
+    // }
 
-    private async Task Refresh()
-    {
-        await logsRef!.LoadAsync();
+    // private async Task Refresh()
+    // {
+    //     await logsRef!.LoadAsync();
 
-        _navigationManager.NavigateTo("/", true);
+    //     _navigationManager.NavigateTo("/", true);
 
-        _found = false;
+    //     _found = false;
 
-        await InvokeAsync(StateHasChanged);
+    //     await InvokeAsync(StateHasChanged);
 
-    }
+    // }
 
-    private async Task OnQrCodeScan(string code)
-    {
-        Console.WriteLine($"QR CODE - {code}");
+    // private async Task OnQrCodeScan(string code)
+    // {
+    //     Console.WriteLine($"QR CODE - {code}");
 
-        _currentVisitor = await _qrCodeService.GetVisitor(code);
+    //     if (string.IsNullOrEmpty(code)) return;
 
-        if (_currentVisitor is null) return;
+    //     _currentVisitor = await _qrCodeService.GetVisitor(code);
 
-        _found = true;
+    //     if (_currentVisitor is null) return;
 
-        await InvokeAsync(StateHasChanged);
-    }
+    //     _found = true;
+
+    //     await InvokeAsync(StateHasChanged);
+    // }
 }
