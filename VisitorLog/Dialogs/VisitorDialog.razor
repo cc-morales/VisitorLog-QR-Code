@@ -23,9 +23,9 @@
 @code {
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
 
-    [Parameter] public VisitorModel? Visitor { get; set; }
+    [Parameter] public QRCodeModel? Visitor { get; set; }
 
-    private VisitorModel Model { get; set; } = new();
+    private QRCodeModel Model { get; set; } = new();
 
     private string _oldQR = string.Empty;
 
@@ -37,7 +37,7 @@
         {
             _oldQR = Visitor.QRCode;
 
-            Model = new VisitorModel
+            Model = new QRCodeModel
             {
                 Id = Visitor.Id,
                 QRCode = Visitor.QRCode,

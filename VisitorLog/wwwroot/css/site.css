@@ -88,6 +88,17 @@ canvas {
     flex-grow: 0;
 }
 
+.custom-button-2 {
+    background-color: #940018 !important;
+    color: white !important;
+    border-radius: 50px !important;
+    border-color: black !important;
+    border-width: 2px !important;
+    height: 40px !important;
+    width: auto !important;
+    min-width: 250px !important;
+}
+
 .custom-button .mud-nav-link {
     padding: 4px 16px !important;
 }
@@ -103,4 +114,9 @@ canvas {
 
 .mud-nav-link-text {
     text-align: center !important;
+}
+
+.custom-image {
+    max-width: 100%; /* Ensures the image never exceeds the container's width */
+    height: auto; /* Maintains the aspect ratio */
 }

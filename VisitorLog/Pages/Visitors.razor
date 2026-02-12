@@ -53,10 +53,10 @@
 </MudContainer>
 </CascadingAuthenticationState>
 @code {
-    private List<VisitorModel> items = new();
+    private List<QRCodeModel> items = new();
     private string search = string.Empty;
 
-    private IEnumerable<VisitorModel> Filtered => string.IsNullOrWhiteSpace(search)
+    private IEnumerable<QRCodeModel> Filtered => string.IsNullOrWhiteSpace(search)
         ? items
         : items.Where(x => (x.QRCode ?? string.Empty).Contains(search, StringComparison.OrdinalIgnoreCase)
                                 || (x.VisitorAlias ?? string.Empty).Contains(search, StringComparison.OrdinalIgnoreCase));
@@ -91,7 +91,7 @@
         var dialog = await _dialogService.ShowAsync<VisitorDialog>("Add Visitor", options);
         var result = await dialog.Result;
 
-        if (!result?.Canceled is true && result?.Data is (VisitorModel vm, string old))
+        if (!result?.Canceled is true && result?.Data is (QRCodeModel vm, string old))
         {
             // await _qrCodeService.AddVisitorAsync(vm);
             await LoadAsync();
@@ -99,14 +99,14 @@
         }
     }
 
-    private async Task EditVisitor(VisitorModel v)
+    private async Task EditVisitor(QRCodeModel v)
     {
         var parameters = new DialogParameters { ["Visitor"] = v };
         var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await _dialogService.ShowAsync<VisitorDialog>("Edit Visitor", parameters, options);
         var result = await dialog.Result;
 
-        if (!result?.Canceled is true && result?.Data is (VisitorModel vm, string oldQR))
+        if (!result?.Canceled is true && result?.Data is (QRCodeModel vm, string oldQR))
         {
             // await _qrCodeService.UpdateVisitorAsync(vm, oldQR);
             await LoadAsync();
@@ -114,7 +114,7 @@
         }
     }
 
-    private async Task DeleteVisitor(VisitorModel v)
+    private async Task DeleteVisitor(QRCodeModel v)
     {
         bool? accept = await ConfirmDelete();
         if (accept is true)

@@ -3,8 +3,19 @@
 @inject IJSRuntime JS
 @using ReactorBlazorQRCodeScanner
 @using VisitorLog.Models
-
-
+    
+<MudPaper Style="margin-top: 80px;" Elevation="0">
+    <MudPaper Elevation="1" Class="d-flex align-items-center justify-content-center mb-4 flex-grow-0">
+        <MudItem xs="12" md="4" lg="6">
+            <MudImage Class="custom-image" Src="css/images/bg.png"></MudImage>
+        </MudItem>
+    </MudPaper>
+    <MudStack AlignItems="AlignItems.Center">
+        <MudButton Class="custom-button-2">ACCOUNT SIGN IN/LOG IN</MudButton>
+        <MudButton Class="custom-button-2">GENERATE NEW QR PASS</MudButton>
+        <MudButton Class="custom-button-2">ABOUT V.I.S.I.T.S</MudButton>
+    </MudStack>
+</MudPaper>
 @* <PageTitle>Scanner</PageTitle>
 
 @if (!_found)
