@@ -1,0 +1,191 @@
+@using VisitorLog.Models
+@using VisitorLog.Services.VisitorManagementService
+@using Microsoft.AspNetCore.Components.Forms
+@inject IVisitorManagementService _visitorService
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@Title</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudStack AlignItems="AlignItems.Center" Spacing="2">
+                @if (showCamera)
+                {
+                    <MudPaper Class="d-flex flex-column align-center pa-2">
+                        <CameraStreamer @ref="cameraStreamer" 
+                                        Style="width: 300px; height: 300px; object-fit: cover; border-radius: 4px;"
+                                        Autostart="true"
+                                        OnRendered="OnCameraRendered" />
+                        <MudStack Row Spacing="2" Class="mt-2">
+                            <MudButton Variant="Variant.Filled" 
+                                       Color="Color.Primary" 
+                                       StartIcon="@Icons.Material.Filled.CameraAlt"
+                                       OnClick="CapturePhoto">
+                                Capture
+                            </MudButton>
+                            <MudButton Variant="Variant.Outlined" 
+                                       Color="Color.Default"
+                                       OnClick="CloseCamera">
+                                Cancel
+                            </MudButton>
+                        </MudStack>
+                    </MudPaper>
+                }
+                else
+                {
+                    @if (!string.IsNullOrEmpty(pictureBase64))
+                    {
+                        <MudImage Src="@pictureBase64" Alt="Visitor Picture" Width="200" Height="200" ObjectFit="ObjectFit.Cover" Class="rounded" />
+                    }
+                    else
+                    {
+                        <MudPaper Width="200px" Height="200px" Class="d-flex align-center justify-center" Elevation="0" Style="border: 2px dashed #ccc;">
+                            <MudText Typo="Typo.body2" Color="Color.Default">No Picture</MudText>
+                        </MudPaper>
+                    }
+
+                    <MudStack Row Spacing="2">
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.Camera"
+                                   OnClick="OpenCamera">
+                            Camera
+                        </MudButton>
+
+                        <MudButton HtmlTag="label"
+                                   Variant="Variant.Filled"
+                                   Color="Color.Secondary"
+                                   StartIcon="@Icons.Material.Filled.PhotoLibrary"
+                                   for="fileInput">
+                            Select File
+                        </MudButton>
+                        <InputFile id="fileInput" OnChange="OnFileSelected" accept="image/*" hidden />
+                    </MudStack>
+                }
+            </MudStack>
+
+            @if (!showCamera)
+            {
+                <MudTextField T="string" Label="Name" @bind-Value="Model.Name" Variant="Variant.Outlined" />
+                <MudTextField T="string" Label="Contact Number" @bind-Value="Model.ContactNumber" Variant="Variant.Outlined" />
+                <MudTextField T="string" Label="Address" @bind-Value="Model.Address" Variant="Variant.Outlined" Lines="2" />
+                <MudTextField T="string" Label="Purpose of Visit" @bind-Value="Model.PurposeOfVisit" Variant="Variant.Outlined" Lines="2" />
+            }
+        </MudStack>
+    </DialogContent>
+
+    <DialogActions>
+        @if (!showCamera)
+        {
+            <MudButton Color="Color.Default" OnClick="Cancel">Cancel</MudButton>
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public VisitorModel? Visitor { get; set; }
+
+    private VisitorModel Model { get; set; } = new();
+    private string Title => Visitor is null ? "Add Visitor" : "Edit Visitor";
+    private string? pictureBase64;
+    private bool showCamera = false;
+    private CameraStreamer? cameraStreamer;
+    private string? latestFrameData;
+
+    protected override void OnInitialized()
+    {
+        if (Visitor != null)
+        {
+            Model = new VisitorModel
+            {
+                VisitorId = Visitor.VisitorId,
+                Name = Visitor.Name,
+                ContactNumber = Visitor.ContactNumber,
+                Address = Visitor.Address,
+                PurposeOfVisit = Visitor.PurposeOfVisit,
+                Picture = Visitor.Picture
+            };
+
+            if (Model.Picture?.Length > 0)
+            {
+                pictureBase64 = $"data:image/png;base64,{Convert.ToBase64String(Model.Picture)}";
+            }
+        }
+    }
+
+    private void OpenCamera()
+    {
+        showCamera = true;
+    }
+
+    private async Task OnCameraRendered()
+    {
+        if (cameraStreamer != null && await cameraStreamer.GetCameraAccessAsync())
+        {
+            await cameraStreamer.ReloadAsync();
+        }
+    }
+
+    private async Task CapturePhoto()
+    {
+        if (cameraStreamer != null)
+        {
+            var imageDataBase64 = await cameraStreamer.GetCurrentFrameAsync();
+            if (!string.IsNullOrEmpty(imageDataBase64))
+            {
+                var data = imageDataBase64.IndexOf(',') >= 0 
+                    ? imageDataBase64[(imageDataBase64.IndexOf(',') + 1)..] 
+                    : imageDataBase64;
+                
+                Model.Picture = Convert.FromBase64String(data);
+                pictureBase64 = $"data:image/png;base64,{data}";
+            }
+        }
+
+        CloseCamera();
+    }
+
+    private void CloseCamera()
+    {
+        showCamera = false;
+        StateHasChanged();
+    }
+
+    private async Task OnFileSelected(InputFileChangeEventArgs e)
+    {
+        await ProcessImageFile(e.File);
+    }
+
+    private async Task ProcessImageFile(IBrowserFile file)
+    {
+        if (file != null)
+        {
+            try
+            {
+                var maxSize = 5 * 1024 * 1024;
+                using var stream = file.OpenReadStream(maxSize);
+                using var memoryStream = new MemoryStream();
+                await stream.CopyToAsync(memoryStream);
+                Model.Picture = memoryStream.ToArray();
+                pictureBase64 = $"data:{file.ContentType};base64,{Convert.ToBase64String(Model.Picture)}";
+                StateHasChanged();
+            }
+            catch
+            {
+            }
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        if (string.IsNullOrWhiteSpace(Model.Name))
+            return;
+
+        MudDialog.Close(DialogResult.Ok(Model));
+    }
+}

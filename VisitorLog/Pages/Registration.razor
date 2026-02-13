@@ -1,5 +1,152 @@
 ﻿@page "/registration"
+@using VisitorLog.Models
+@using VisitorLog.Services.VisitorManagementService
+@inject IVisitorManagementService _visitorService
+@inject IDialogService _dialogService
+@inject ISnackbar _snackbar
+
+<MudContainer MaxWidth="MaxWidth.False" Style="margin-top: 60px;">
+    <MudPaper Class="pa-4">
+        <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+            <MudText Typo="Typo.h6">Visitor Registration</MudText>
+            <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                <MudTextField Placeholder="Search" 
+                              @bind-Value="search" 
+                              Adornment="Adornment.Start" 
+                              AdornmentIcon="@Icons.Material.Filled.Search" 
+                              Immediate="true"
+                              OnImmediateValueChanged="OnSearchChanged" />
+                <MudSpacer/>
+                <MudIconButton Icon="@Icons.Material.Filled.Add" 
+                               Color="Color.Primary" 
+                               OnClick="AddVisitor" />
+            </MudStack>
+        </MudStack>
+
+        <MudTable Context="visitor" Items="Filtered" Hover="true" Class="mt-4">
+            <ColGroup>
+                <col style="width: 80px;"/>
+                <col/>
+                <col/>
+                <col/>
+                <col style="width: 10%;"/>
+            </ColGroup>
+            <HeaderContent>
+                <MudTh>Picture</MudTh>
+                <MudTh>Name</MudTh>
+                <MudTh>Contact Number</MudTh>
+                <MudTh>Purpose</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Picture">
+                    @if (visitor.Picture?.Length > 0)
+                    {
+                        <MudImage Src="@($"data:image/png;base64,{Convert.ToBase64String(visitor.Picture)}")" 
+                                  Alt="@visitor.Name" 
+                                  Width="50" 
+                                  Height="50" 
+                                  ObjectFit="ObjectFit.Cover"
+                                  Class="rounded" />
+                    }
+                    else
+                    {
+                        <MudAvatar Color="Color.Primary" Size="Size.Medium">@visitor.Name.FirstOrDefault()</MudAvatar>
+                    }
+                </MudTd>
+                <MudTd DataLabel="Name">@visitor.Name</MudTd>
+                <MudTd DataLabel="Contact">@visitor.ContactNumber</MudTd>
+                <MudTd DataLabel="Purpose">@visitor.PurposeOfVisit</MudTd>
+                <MudTd Class="text-center">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" 
+                                   Color="Color.Primary" 
+                                   Size="Size.Small" 
+                                   OnClick="@(() => EditVisitor(visitor))" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                   Color="Color.Error" 
+                                   Size="Size.Small" 
+                                   OnClick="@(() => DeleteVisitor(visitor))" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudPaper>
+</MudContainer>
 
 @code {
+    private List<VisitorModel> items = new();
+    private string search = string.Empty;
 
+    private IEnumerable<VisitorModel> Filtered => string.IsNullOrWhiteSpace(search)
+        ? items
+        : items.Where(x => (x.Name ?? string.Empty).Contains(search, StringComparison.OrdinalIgnoreCase)
+                        || (x.ContactNumber ?? string.Empty).Contains(search, StringComparison.OrdinalIgnoreCase)
+                        || (x.PurposeOfVisit ?? string.Empty).Contains(search, StringComparison.OrdinalIgnoreCase));
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        items = await _visitorService.GetVisitorsAsync();
+        StateHasChanged();
+    }
+
+    private void OnSearchChanged(string _) => StateHasChanged();
+
+    private async Task AddVisitor()
+    {
+        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await _dialogService.ShowAsync<VisitorDialog>("Register Visitor", options);
+        var result = await dialog.Result;
+
+        if (!result?.Canceled is true && result?.Data is VisitorModel visitor)
+        {
+            await _visitorService.AddVisitorAsync(visitor);
+            await LoadAsync();
+            _snackbar.Add("Visitor registered.", Severity.Success);
+        }
+    }
+
+    private async Task EditVisitor(VisitorModel v)
+    {
+        var parameters = new DialogParameters { ["Visitor"] = v };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await _dialogService.ShowAsync<VisitorDialog>("Edit Visitor", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result?.Canceled is true && result?.Data is VisitorModel updated)
+        {
+            await _visitorService.UpdateVisitorAsync(updated);
+            await LoadAsync();
+            _snackbar.Add("Visitor updated.", Severity.Success);
+        }
+    }
+
+    private async Task DeleteVisitor(VisitorModel v)
+    {
+        bool? accept = await ConfirmDelete();
+        if (accept is true)
+        {
+            await _visitorService.DeleteVisitorAsync(v.VisitorId);
+            await LoadAsync();
+            _snackbar.Add("Visitor deleted.", Severity.Info);
+        }
+    }
+
+    private async Task<bool?> ConfirmDelete()
+    {
+        var parameters = new DialogParameters
+        {
+            ["ContentText"] = "Are you sure you want to delete this visitor?",
+            ["ButtonText"] = "Delete"
+        };
+        var options = new DialogOptions { CloseButton = true };
+        var dialog = await _dialogService.ShowAsync<ConfirmDialog>("Confirm", parameters, options);
+        var result = await dialog.Result;
+        if (result?.Canceled is true) return false;
+        return result?.Data is bool b && b;
+    }
 }

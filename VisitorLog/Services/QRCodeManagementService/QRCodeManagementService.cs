@@ -16,7 +16,16 @@ namespace VisitorLog.Services.QRCodeManagementService
 
         public async Task<List<QRCodeModel>> GetQRCodesAsync()
         {
-            return await _context.QRCodes.ToListAsync();
+            try
+            {
+                return await _context.QRCodes
+                    .AsNoTracking()
+                    .ToListAsync();
+            }
+            catch (OperationCanceledException)
+            {
+                return new List<QRCodeModel>();
+            }
         }
 
         public async Task AddQRCodeAsync(QRCodeModel qrCode)
@@ -27,13 +36,8 @@ namespace VisitorLog.Services.QRCodeManagementService
 
         public async Task UpdateQRCodeAsync(QRCodeModel qrCode)
         {
-            var existing = await _context.QRCodes.FindAsync(qrCode.QRCodeId);
-            if (existing != null)
-            {
-                existing.QRCode = qrCode.QRCode;
-                existing.QRCodeAlias = qrCode.QRCodeAlias;
-                await _context.SaveChangesAsync();
-            }
+            _context.QRCodes.Update(qrCode);
+            await _context.SaveChangesAsync();
         }
 
         public async Task DeleteQRCodeAsync(Guid qrCodeId)

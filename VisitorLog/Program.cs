@@ -8,6 +8,7 @@ using MudBlazor.Services;
 using VisitorLog.ApplicationDBContextService;
 using VisitorLog.Services.Auth;
 using VisitorLog.Services.QRCodeManagementService;
+using VisitorLog.Services.VisitorManagementService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,7 +20,12 @@ builder.Services.AddBlazoredLocalStorage();
 
 // Add services to the container.
 builder.Services.AddRazorPages();
-builder.Services.AddServerSideBlazor();
+builder.Services.AddServerSideBlazor(options =>
+{
+    options.DetailedErrors = builder.Environment.IsDevelopment();
+    options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(3);
+    options.JSInteropDefaultCallTimeout = TimeSpan.FromMinutes(1);
+}).AddHubOptions(o => o.MaximumReceiveMessageSize = 100_000_000);
 
 // auth state provider registration
 builder.Services.AddAuthorizationCore();
@@ -27,6 +33,7 @@ builder.Services.AddScoped<SimpleAuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<SimpleAuthStateProvider>());
 
 builder.Services.AddScoped<IQRCodeManagementService, QRCodeManagementService>();
+builder.Services.AddScoped<IVisitorManagementService, VisitorManagementService>();
 
 var app = builder.Build();
 

@@ -20,7 +20,6 @@
     <MudAppBar Elevation="1">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
         <MudSpacer />
-        <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" Href="https://github.com/MudBlazor/MudBlazor" Target="_blank" />
     </MudAppBar>
     <MudDrawer @bind-Open="@_open" Breakpoint="@_breakpoint" Elevation="1" Variant="@DrawerVariant.Responsive" Color="Color.Inherit">
         <MudDrawerHeader>
@@ -29,7 +28,7 @@
         <MudNavMenu>
             <MudNavLink Class="custom-button" Href="/" Match="NavLinkMatch.All">HOME</MudNavLink>
             <MudNavLink Class="custom-button" Href="/qrcodes" Match="NavLinkMatch.All">QR CODES</MudNavLink>
-            <MudNavLink Class="custom-button" Href="/regsitration" Match="NavLinkMatch.All">REGISTRATION</MudNavLink>
+            <MudNavLink Class="custom-button" Href="/registration" Match="NavLinkMatch.All">REGISTRATION</MudNavLink>
             <MudNavLink Class="custom-button" Href="/scan" Match="NavLinkMatch.All">SCAN</MudNavLink>
             <MudNavLink Class="custom-button" Href="/timestamp" Match="NavLinkMatch.All">LOGS</MudNavLink>
         </MudNavMenu>
