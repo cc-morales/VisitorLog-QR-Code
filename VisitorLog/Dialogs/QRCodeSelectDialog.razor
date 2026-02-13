@@ -1,0 +1,91 @@
+@using VisitorLog.Models
+@using VisitorLog.Services.QRCodeManagementService
+@inject IQRCodeManagementService _qrCodeService
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Select QR Code</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudTextField Placeholder="Search" 
+                          T="string"
+                          Value="search" 
+                          Adornment="Adornment.Start" 
+                          AdornmentIcon="@Icons.Material.Filled.Search" 
+                          Immediate="true"
+                          ValueChanged="s => OnChanged(s)" />
+
+            @if (qrCodes?.Any() is true)
+            {
+                <MudList T="string">
+                    @foreach (var qr in FilteredQRCodes)
+                    {
+                        <MudListItem Value="@qr.QRCodeId.ToString()" OnClick="@(() => SelectQRCode(qr))">
+                            <MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                <div>
+                                    <MudText Typo="Typo.body1">@qr.QRCodeAlias</MudText>
+                                    <MudText Typo="Typo.caption">@qr.QRCode</MudText>
+                                </div>
+                                @if (selectedQRCode?.QRCodeId == qr.QRCodeId)
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Primary" />
+                                }
+                            </MudStack>
+                        </MudListItem>
+                        <MudDivider />
+                    }
+                </MudList>
+            }
+            else
+            {
+                <MudText Typo="Typo.body2" Align="Align.Center" Class="pa-4">No QR codes available</MudText>
+            }
+        </MudStack>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Color="Color.Default" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Select" Disabled="@(selectedQRCode == null)">Select</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+
+    private List<QRCodeModel> qrCodes = new();
+    private string search = string.Empty;
+    private QRCodeModel? selectedQRCode;
+
+    private IEnumerable<QRCodeModel> FilteredQRCodes => string.IsNullOrWhiteSpace(search)
+        ? qrCodes
+        : qrCodes.Where(x => (x.QRCode ?? string.Empty).Contains(search, StringComparison.OrdinalIgnoreCase)
+                                || (x.QRCodeAlias ?? string.Empty).Contains(search, StringComparison.OrdinalIgnoreCase));
+
+    protected override async Task OnInitializedAsync()
+    {
+        qrCodes = await _qrCodeService.GetQRCodesAsync();
+    }
+
+    private void SelectQRCode(QRCodeModel qr)
+    {
+        selectedQRCode = qr;
+        StateHasChanged();
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Select()
+    {
+        if (selectedQRCode != null)
+        {
+            MudDialog.Close(DialogResult.Ok(selectedQRCode));
+        }
+    }
+
+    private void OnChanged(string s)
+    {
+        search = s;
+        StateHasChanged();
+    }
+}

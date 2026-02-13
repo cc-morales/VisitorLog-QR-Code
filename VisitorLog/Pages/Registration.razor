@@ -1,8 +1,10 @@
 ﻿@page "/registration"
 @using VisitorLog.Models
 @using VisitorLog.Services.VisitorManagementService
+@using VisitorLog.Services.QRSetManagementService
 @using VisitorLog.Services.Auth
 @inject IVisitorManagementService _visitorService
+@inject IQRSetManagementService _qrSetService
 @inject IDialogService _dialogService
 @inject ISnackbar _snackbar
 @inject SimpleAuthStateProvider _authProvider
@@ -34,13 +36,15 @@
                             <col/>
                             <col/>
                             <col/>
-                            <col style="width: 10%;"/>
+                            <col style="width: 150px;"/>
+                            <col style="width: 15%;"/>
                         </ColGroup>
                         <HeaderContent>
                             <MudTh>Picture</MudTh>
                             <MudTh>Name</MudTh>
                             <MudTh>Contact Number</MudTh>
                             <MudTh>Purpose</MudTh>
+                            <MudTh>QR Code</MudTh>
                             <MudTh></MudTh>
                         </HeaderContent>
                         <RowTemplate>
@@ -62,7 +66,33 @@
                             <MudTd DataLabel="Name">@visitor.Name</MudTd>
                             <MudTd DataLabel="Contact">@visitor.ContactNumber</MudTd>
                             <MudTd DataLabel="Purpose">@visitor.PurposeOfVisit</MudTd>
+                            <MudTd DataLabel="QR Code">
+                                @if (qrSetCache.TryGetValue(visitor.VisitorId, out var qrSet) && qrSet?.QRCode != null)
+                                {
+                                    <MudChip T="string" Color="Color.Success" Size="Size.Small">@qrSet.QRCode.QRCodeAlias</MudChip>
+                                }
+                                else
+                                {
+                                    <MudChip T="string" Color="Color.Default" Size="Size.Small">Not Set</MudChip>
+                                }
+                            </MudTd>
                             <MudTd Class="text-center">
+                                @if (qrSetCache.TryGetValue(visitor.VisitorId, out var existingSet) && existingSet != null)
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Filled.QrCode" 
+                                                   Color="Color.Warning" 
+                                                   Size="Size.Small" 
+                                                   OnClick="@(() => RemoveQRCode(visitor))" 
+                                                   Title="Remove QR Code" />
+                                }
+                                else
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Filled.QrCode" 
+                                                   Color="Color.Primary" 
+                                                   Size="Size.Small" 
+                                                   OnClick="@(() => SetQRCode(visitor))" 
+                                                   Title="Set QR Code" />
+                                }
                                 <MudIconButton Icon="@Icons.Material.Filled.Edit" 
                                                Color="Color.Primary" 
                                                Size="Size.Small" 
@@ -89,6 +119,7 @@
 
 @code {
     private List<VisitorModel> items = new();
+    private Dictionary<Guid, QRSetModel?> qrSetCache = new();
     private string search = string.Empty;
 
     private IEnumerable<VisitorModel> Filtered => string.IsNullOrWhiteSpace(search)
@@ -106,10 +137,45 @@
     private async Task LoadAsync()
     {
         items = await _visitorService.GetVisitorsAsync();
+        
+        qrSetCache.Clear();
+        foreach (var visitor in items)
+        {
+            var qrSet = await _qrSetService.GetQRSetByVisitorIdAsync(visitor.VisitorId);
+            qrSetCache[visitor.VisitorId] = qrSet;
+        }
+        
         StateHasChanged();
     }
 
     private void OnSearchChanged(string _) => StateHasChanged();
+
+    private async Task SetQRCode(VisitorModel visitor)
+    {
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = await _dialogService.ShowAsync<QRCodeSelectDialog>("Select QR Code", options);
+        var result = await dialog.Result;
+
+        if (!result?.Canceled is true && result?.Data is QRCodeModel qr)
+        {
+            var qrSet = new QRSetModel
+            {
+                VisitorId = visitor.VisitorId,
+                QRCodeId = qr.QRCodeId
+            };
+
+            await _qrSetService.AddQRSetAsync(qrSet);
+            await LoadAsync();
+            _snackbar.Add($"QR Code '{qr.QRCodeAlias}' assigned to {visitor.Name}", Severity.Success);
+        }
+    }
+
+    private async Task RemoveQRCode(VisitorModel visitor)
+    {
+        await _qrSetService.DeleteQRSetByVisitorIdAsync(visitor.VisitorId);
+        await LoadAsync();
+        _snackbar.Add($"QR Code removed from {visitor.Name}", Severity.Info);
+    }
 
     private async Task AddVisitor()
     {
@@ -145,6 +211,7 @@
         bool? accept = await ConfirmDelete();
         if (accept is true)
         {
+            await _qrSetService.DeleteQRSetByVisitorIdAsync(v.VisitorId);
             await _visitorService.DeleteVisitorAsync(v.VisitorId);
             await LoadAsync();
             _snackbar.Add("Visitor deleted.", Severity.Info);

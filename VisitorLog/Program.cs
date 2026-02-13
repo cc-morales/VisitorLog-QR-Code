@@ -8,6 +8,7 @@ using MudBlazor.Services;
 using VisitorLog.ApplicationDBContextService;
 using VisitorLog.Services.Auth;
 using VisitorLog.Services.QRCodeManagementService;
+using VisitorLog.Services.QRSetManagementService;
 using VisitorLog.Services.VisitorManagementService;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -34,6 +35,7 @@ builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredServ
 
 builder.Services.AddScoped<IQRCodeManagementService, QRCodeManagementService>();
 builder.Services.AddScoped<IVisitorManagementService, VisitorManagementService>();
+builder.Services.AddScoped<IQRSetManagementService, QRSetManagementService>();
 
 var app = builder.Build();
 
