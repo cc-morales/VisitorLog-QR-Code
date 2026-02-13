@@ -1,0 +1,103 @@
+@using VisitorLog.Models
+@using VisitorLog.Services.QRCodeManagementService
+@inject IQRCodeManagementService _qrCodeService
+@inject IJSRuntime _jsRuntime
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@Title</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudTextField T="string" 
+                          Label="QR Code" 
+                          Value="Model.QRCode" 
+                          Variant="Variant.Outlined"
+                          Immediate="true"
+                          ValueChanged="OnQRCodeChanged" />
+            
+            <MudTextField T="string" 
+                          Label="QR Code Alias" 
+                          @bind-Value="Model.QRCodeAlias" 
+                          Variant="Variant.Outlined" />
+
+            @if (qrImageBytes != null && qrImageBytes.Length > 0)
+            {
+                <MudStack AlignItems="AlignItems.Center" Spacing="2">
+                    <MudImage Src="@qrImageSrc" Alt="QR Code" Width="200" Height="200" />
+                    <MudButton StartIcon="@Icons.Material.Filled.Download" 
+                               Color="Color.Primary" 
+                               Variant="Variant.Filled" 
+                               OnClick="DownloadQRCode">
+                        Download QR Code
+                    </MudButton>
+                </MudStack>
+            }
+        </MudStack>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Color="Color.Default" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public QRCodeModel? QRCode { get; set; }
+
+    private QRCodeModel Model { get; set; } = new();
+    private string Title => QRCode is null ? "Add QR Code" : "Edit QR Code";
+    private byte[]? qrImageBytes;
+    private string? qrImageSrc;
+
+    protected override void OnInitialized()
+    {
+        if (QRCode != null)
+        {
+            Model = new QRCodeModel
+            {
+                QRCodeId = QRCode.QRCodeId,
+                QRCode = QRCode.QRCode,
+                QRCodeAlias = QRCode.QRCodeAlias
+            };
+            GenerateQRImage();
+        }
+    }
+
+    private void OnQRCodeChanged(string value)
+    {
+		Model.QRCode = value;
+
+        GenerateQRImage();
+    }
+
+    private void GenerateQRImage()
+    {
+        if (!string.IsNullOrWhiteSpace(Model.QRCode))
+        {
+            qrImageBytes = _qrCodeService.GenerateQRCodeImage(Model.QRCode);
+            qrImageSrc = $"data:image/png;base64,{Convert.ToBase64String(qrImageBytes)}";
+            StateHasChanged();
+        }
+    }
+
+    private async Task DownloadQRCode()
+    {
+        if (qrImageBytes != null)
+        {
+            var fileName = $"QRCode_{Model.QRCodeAlias ?? "Download"}_{DateTime.Now:yyyyMMddHHmmss}.png";
+            await _jsRuntime.InvokeVoidAsync("downloadFile", fileName, Convert.ToBase64String(qrImageBytes));
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        if (string.IsNullOrWhiteSpace(Model.QRCode))
+            return;
+
+        MudDialog.Close(DialogResult.Ok(Model));
+    }
+}

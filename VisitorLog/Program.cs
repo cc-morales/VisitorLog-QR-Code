@@ -1,12 +1,13 @@
+using System;
 using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
-using System;
 using VisitorLog.ApplicationDBContextService;
 using VisitorLog.Services.Auth;
+using VisitorLog.Services.QRCodeManagementService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +25,8 @@ builder.Services.AddServerSideBlazor();
 builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<SimpleAuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<SimpleAuthStateProvider>());
+
+builder.Services.AddScoped<IQRCodeManagementService, QRCodeManagementService>();
 
 var app = builder.Build();
 

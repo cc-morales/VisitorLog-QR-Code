@@ -1,1 +1,162 @@
 ﻿@page "/qrcodes"
+@using VisitorLog.Models
+@using VisitorLog.Services.QRCodeManagementService
+@using VisitorLog.Services.Auth
+@inject IQRCodeManagementService _qrCodeService
+@inject IDialogService _dialogService
+@inject ISnackbar _snackbar
+@inject SimpleAuthStateProvider _authProvider
+
+<CascadingAuthenticationState>
+    <MudContainer MaxWidth="MaxWidth.False" Style="margin-top: 60px;">
+        <AuthorizeView>
+            <Authorized>
+                <MudPaper Class="pa-4">
+                    <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                        <MudText Typo="Typo.h6">QR Codes</MudText>
+                        <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                            <MudTextField Placeholder="Search" 
+                                          @bind-Value="search" 
+                                          Adornment="Adornment.Start" 
+                                          AdornmentIcon="@Icons.Material.Filled.Search" 
+                                          Immediate="true"
+                                          OnImmediateValueChanged="OnSearchChanged" />
+                            <MudSpacer/>
+                            <MudIconButton Icon="@Icons.Material.Filled.Add" 
+                                           Color="Color.Primary" 
+                                           OnClick="AddQRCode" />
+                        </MudStack>
+                    </MudStack>
+
+                    <MudTable Context="qrcode" Items="Filtered" Hover="true" Class="mt-4">
+                        <ColGroup>
+                            <col/>
+                            <col/>
+                            <col style="width: 10%;"/>
+                        </ColGroup>
+                        <HeaderContent>
+                            <MudTh>QR Code</MudTh>
+                            <MudTh>Alias</MudTh>
+                            <MudTh></MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="QR Code">@qrcode.QRCode</MudTd>
+                            <MudTd DataLabel="Alias">@qrcode.QRCodeAlias</MudTd>
+                            <MudTd Class="text-center">
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" 
+                                               Color="Color.Primary" 
+                                               Size="Size.Small" 
+                                               OnClick="@(() => EditQRCode(qrcode))" />
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                </MudPaper>
+            </Authorized>
+            <NotAuthorized>
+                <MudPaper Class="pa-6 d-flex flex-column align-center">
+                    <MudText Typo="Typo.h6">You are not authorized</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-4">Please authorize to manage QR codes.</MudText>
+                    <MudButton Color="Color.Primary" OnClick="OpenAuthorize">Authorize</MudButton>
+                </MudPaper>
+            </NotAuthorized>
+        </AuthorizeView>
+    </MudContainer>
+</CascadingAuthenticationState>
+
+@code {
+    private List<QRCodeModel> items = new();
+    private string search = string.Empty;
+
+    private IEnumerable<QRCodeModel> Filtered => string.IsNullOrWhiteSpace(search)
+        ? items
+        : items.Where(x => (x.QRCode ?? string.Empty).Contains(search, StringComparison.OrdinalIgnoreCase)
+                        || (x.QRCodeAlias ?? string.Empty).Contains(search, StringComparison.OrdinalIgnoreCase));
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        items = await _qrCodeService.GetQRCodesAsync();
+        StateHasChanged();
+    }
+
+    private void OnSearchChanged(string _) => StateHasChanged();
+
+    private async Task AddQRCode()
+    {
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = await _dialogService.ShowAsync<QRCodeDialog>("Add QR Code", options);
+        var result = await dialog.Result;
+
+        if (!result?.Canceled is true && result?.Data is QRCodeModel qr)
+        {
+            await _qrCodeService.AddQRCodeAsync(qr);
+            await LoadAsync();
+            _snackbar.Add("QR Code added.", Severity.Success);
+        }
+    }
+
+    private async Task EditQRCode(QRCodeModel qr)
+    {
+        var parameters = new DialogParameters { ["QRCode"] = qr };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = await _dialogService.ShowAsync<QRCodeDialog>("Edit QR Code", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result?.Canceled is true && result?.Data is QRCodeModel updated)
+        {
+            await _qrCodeService.UpdateQRCodeAsync(updated);
+            await LoadAsync();
+            _snackbar.Add("QR Code updated.", Severity.Success);
+        }
+    }
+
+    private async Task DeleteQRCode(QRCodeModel qr)
+    {
+        bool? accept = await ConfirmDelete();
+        if (accept is true)
+        {
+            await _qrCodeService.DeleteQRCodeAsync(qr.QRCodeId);
+            await LoadAsync();
+            _snackbar.Add("QR Code deleted.", Severity.Info);
+        }
+    }
+
+    private async Task<bool?> ConfirmDelete()
+    {
+        // var parameters = new DialogParameters
+        // {
+        //     ["ContentText"] = "Are you sure you want to delete this QR code?",
+        //     ["ButtonText"] = "Delete"
+        // };
+        // var options = new DialogOptions { CloseButton = true };
+        // var dialog = await _dialogService.ShowAsync<ConfirmDialog>("Confirm", parameters, options);
+        // var result = await dialog.Result;
+        // if (result?.Canceled is true) return false;
+        // return result?.Data is bool b && b;
+
+        return true;
+    }
+
+    private async Task OpenAuthorize()
+    {
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, BackdropClick = false };
+        var dialog = await _dialogService.ShowAsync<AuthorizedDialog>("Authorize", options);
+        var result = await dialog.Result;
+
+        if (!result?.Canceled is true && result?.Data is bool ok && ok)
+        {
+            await _authProvider.SignInAsync("admin");
+            _snackbar.Add("Authorized. You are signed in.", Severity.Success);
+            await LoadAsync();
+        }
+        else
+        {
+            _snackbar.Add("Authorization failed or cancelled.", Severity.Warning);
+        }
+    }
+}
