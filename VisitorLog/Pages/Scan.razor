@@ -136,11 +136,14 @@
     private QRCodeScannerJsInterop? _qrCodeScannerJsInterop;
     private Action<string>? _onQrCodeScanAction;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        _onQrCodeScanAction = (code) => OnBarcodeDetected(code);
-        _qrCodeScannerJsInterop = new QRCodeScannerJsInterop(JS);
-        await _qrCodeScannerJsInterop.Init(_onQrCodeScanAction);
+        if(firstRender)
+        {
+            _onQrCodeScanAction = (code) => OnBarcodeDetected(code);
+            _qrCodeScannerJsInterop = new QRCodeScannerJsInterop(JS);
+            await _qrCodeScannerJsInterop.Init(_onQrCodeScanAction);
+        }
     }
 
     private async void OnBarcodeDetected(string qrCode)
