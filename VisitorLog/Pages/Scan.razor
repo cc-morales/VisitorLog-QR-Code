@@ -1,5 +1,234 @@
 ﻿@page "/scan"
+@using VisitorLog.Models
+@using VisitorLog.Services.LogManagementService
+@using ReactorBlazorQRCodeScanner
+@inject ILogManagementService _logService
+@inject ISnackbar _snackbar
+@inject IJSRuntime JS
+
+<MudContainer MaxWidth="MaxWidth.False" Style="margin-top: 60px;">
+    <MudPaper Class="pa-4">
+        <MudText Typo="Typo.h6" Class="mb-4">QR Code Scanner</MudText>
+
+        <MudGrid>
+            <MudItem xs="12" md="6" lg="6">
+                <MudPaper Class="pa-4" Elevation="2" Style="overflow: hidden;">
+                    <MudText Typo="Typo.subtitle1" Class="mb-2">Scanner</MudText>
+                    <div style="position: relative; width: 100%; max-width: 100%;">
+                        <QRCodeScanner Width="100%" ShowOutput="false" />
+                    </div>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" md="6" lg="6">
+                <MudPaper Class="pa-4" Elevation="2">
+                    <MudGrid>
+                        <MudItem xs="12">
+                            <MudText Typo="Typo.subtitle1">Scan Result</MudText>
+                            <MudDivider Class="my-2" />
+                        </MudItem>
+
+                        <MudItem xs="12">
+                            <MudText Typo="Typo.body2" Color="Color.Default">QR Code Detected:</MudText>
+                            @if (!string.IsNullOrEmpty(detectedQRCode))
+                            {
+                                <MudChip T=string Color="Color.Success" Size="Size.Small">@detectedQRCode</MudChip>
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Default">No code detected</MudText>
+                            }
+                        </MudItem>
+
+                        <MudItem xs="12">
+                            <MudText Typo="Typo.body2" Color="Color.Default">Visitor:</MudText>
+                            @if (!string.IsNullOrEmpty(visitorName))
+                            {
+                                <MudText Typo="Typo.body1">@visitorName</MudText>
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Default">-</MudText>
+                            }
+                        </MudItem>
+
+                        <MudItem xs="12">
+                            <MudText Typo="Typo.body2" Color="Color.Default">Time In:</MudText>
+                            @if (timeIn.HasValue)
+                            {
+                                <MudText Typo="Typo.body1" Color="Color.Success">@timeIn.Value.ToString("yyyy-MM-dd hh:mm:ss tt")</MudText>
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Default">-</MudText>
+                            }
+                        </MudItem>
+
+                        <MudItem xs="12">
+                            <MudText Typo="Typo.body2" Color="Color.Default">Time Out:</MudText>
+                            @if (timeOut.HasValue)
+                            {
+                                <MudText Typo="Typo.body1" Color="Color.Error">@timeOut.Value.ToString("yyyy-MM-dd hh:mm:ss tt")</MudText>
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Default">-</MudText>
+                            }
+                        </MudItem>
+
+                        @if (isProcessing)
+                        {
+                            <MudItem xs="12" Class="d-flex justify-center">
+                                <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+                            </MudItem>
+                        }
+                    </MudGrid>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+</MudContainer>
+
+<style>
+    #canvas {
+        max-width: 100% !important;
+        height: auto !important;
+        aspect-ratio: auto 1 / 1 !important;
+        border-radius: 16px !important;
+        display: block !important;
+        margin: 0 auto !important;
+    }
+    
+    #outputCanvas {
+        max-width: 100% !important;
+        height: auto !important;
+        aspect-ratio: auto 1 / 1 !important;
+        border-radius: 16px !important;
+        display: block !important;
+        margin: 0 auto !important;
+    }
+    
+    #canvasElement {
+        max-width: 100% !important;
+        height: auto !important;
+        aspect-ratio: auto 1 / 1 !important;
+        border-radius: 16px !important;
+        display: block !important;
+        margin: 0 auto !important;
+    }
+
+    video {
+        max-width: 100% !important;
+        height: auto !important;
+        aspect-ratio: auto 1 / 1 !important;
+        border-radius: 16px !important;
+        display: block !important;
+        margin: 0 auto !important;
+    }
+</style>
 
 @code {
+    private string? detectedQRCode;
+    private string? visitorName;
+    private DateTime? timeIn;
+    private DateTime? timeOut;
+    private bool isProcessing = false;
+    private QRCodeScannerJsInterop? _qrCodeScannerJsInterop;
+    private Action<string>? _onQrCodeScanAction;
 
+    protected override async Task OnInitializedAsync()
+    {
+        _onQrCodeScanAction = (code) => OnBarcodeDetected(code);
+        _qrCodeScannerJsInterop = new QRCodeScannerJsInterop(JS);
+        await _qrCodeScannerJsInterop.Init(_onQrCodeScanAction);
+    }
+
+    private async void OnBarcodeDetected(string qrCode)
+    {
+        if (isProcessing || string.IsNullOrWhiteSpace(qrCode))
+            return;
+
+        isProcessing = true;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            detectedQRCode = qrCode;
+
+            var qrSet = await _logService.GetQRSetByQRCodeAsync(qrCode);
+
+            if (qrSet?.Visitor == null)
+            {
+                _snackbar.Add("QR Code not registered to any visitor.", Severity.Warning);
+                await Task.Delay(3000);
+                ResetDisplay();
+                return;
+            }
+
+            visitorName = qrSet.Visitor.Name;
+
+            var lastLog = await _logService.GetLastLogByVisitorIdAsync(qrSet.VisitorId);
+
+            LogEntryType nextEntryType;
+            if (lastLog == null || lastLog.EntryType == LogEntryType.TimeOut)
+            {
+                nextEntryType = LogEntryType.TimeIn;
+                timeIn = DateTime.Now;
+                timeOut = null;
+            }
+            else
+            {
+                nextEntryType = LogEntryType.TimeOut;
+                timeOut = DateTime.Now;
+                timeIn = lastLog.Timestamp;
+            }
+
+            var newLog = new LogModel
+            {
+                VisitorId = qrSet.VisitorId,
+                QRCodeId = qrSet.QRCodeId,
+                EntryType = nextEntryType,
+                Timestamp = DateTime.UtcNow
+            };
+
+            await _logService.AddLogAsync(newLog);
+
+            var message = nextEntryType == LogEntryType.TimeIn
+                ? $"{visitorName} - Time In recorded"
+                : $"{visitorName} - Time Out recorded";
+
+            _snackbar.Add(message, Severity.Success);
+            
+            await Task.Delay(3000);
+            ResetDisplay();
+        }
+        catch (Exception ex)
+        {
+            _snackbar.Add($"Error processing scan: {ex.Message}", Severity.Error);
+            await Task.Delay(3000);
+            ResetDisplay();
+        }
+        finally
+        {
+            isProcessing = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void ResetDisplay()
+    {
+        detectedQRCode = null;
+        visitorName = null;
+        timeIn = null;
+        timeOut = null;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_qrCodeScannerJsInterop != null)
+        {
+            await _qrCodeScannerJsInterop.StopRecording();
+        }
+    }
 }

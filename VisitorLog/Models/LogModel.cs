@@ -10,7 +10,6 @@ namespace VisitorLog.Models
         [Key]
         public Guid LogId { get; set; } = Guid.NewGuid();
 
-        // Nullable FKs so logs can remain if related entities are removed (matches SetNull behaviour)
         public Guid? VisitorId { get; set; }
 
         [ForeignKey(nameof(VisitorId))]
@@ -21,6 +20,8 @@ namespace VisitorLog.Models
         [ForeignKey(nameof(QRCodeId))]
         public QRCodeModel? QRCode { get; set; }
 
-        public DateTime DateCreated { get; set; } = DateTime.UtcNow;
+        public LogEntryType EntryType { get; set; }
+
+        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
     }
 }
