@@ -2,10 +2,12 @@
 @using VisitorLog.Models
 @using VisitorLog.Services.QRCodeManagementService
 @using VisitorLog.Services.Auth
+@using Microsoft.JSInterop
 @inject IQRCodeManagementService _qrCodeService
 @inject IDialogService _dialogService
 @inject ISnackbar _snackbar
 @inject SimpleAuthStateProvider _authProvider
+@inject IJSRuntime _jsRuntime
 
 <CascadingAuthenticationState>
     <MudContainer MaxWidth="MaxWidth.False" Style="margin-top: 60px;">
@@ -32,7 +34,7 @@
                         <ColGroup>
                             <col/>
                             <col/>
-                            <col style="width: 10%;"/>
+                            <col style="width: 15%;"/>
                         </ColGroup>
                         <HeaderContent>
                             <MudTh>QR Code</MudTh>
@@ -43,6 +45,10 @@
                             <MudTd DataLabel="QR Code">@qrcode.QRCode</MudTd>
                             <MudTd DataLabel="Alias">@qrcode.QRCodeAlias</MudTd>
                             <MudTd Class="text-center">
+                                <MudIconButton Icon="@Icons.Material.Filled.Download" 
+                                               Color="Color.Success" 
+                                               Size="Size.Small" 
+                                               OnClick="@(() => DownloadQRCode(qrcode))" />
                                 <MudIconButton Icon="@Icons.Material.Filled.Edit" 
                                                Color="Color.Primary" 
                                                Size="Size.Small" 
@@ -86,6 +92,14 @@
 
     private void OnSearchChanged(string _) => StateHasChanged();
 
+    private async Task DownloadQRCode(QRCodeModel qr)
+    {
+        var qrImageBytes = _qrCodeService.GenerateQRCodeImage(qr.QRCode);
+        var fileName = $"QRCode_{qr.QRCodeAlias ?? qr.QRCode}_{DateTime.Now:yyyyMMddHHmmss}.png";
+        await _jsRuntime.InvokeVoidAsync("downloadFile", fileName, Convert.ToBase64String(qrImageBytes));
+        _snackbar.Add($"QR Code downloaded: {fileName}", Severity.Info);
+    }
+
     private async Task AddQRCode()
     {
         var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
@@ -113,33 +127,6 @@
             await LoadAsync();
             _snackbar.Add("QR Code updated.", Severity.Success);
         }
-    }
-
-    private async Task DeleteQRCode(QRCodeModel qr)
-    {
-        bool? accept = await ConfirmDelete();
-        if (accept is true)
-        {
-            await _qrCodeService.DeleteQRCodeAsync(qr.QRCodeId);
-            await LoadAsync();
-            _snackbar.Add("QR Code deleted.", Severity.Info);
-        }
-    }
-
-    private async Task<bool?> ConfirmDelete()
-    {
-        // var parameters = new DialogParameters
-        // {
-        //     ["ContentText"] = "Are you sure you want to delete this QR code?",
-        //     ["ButtonText"] = "Delete"
-        // };
-        // var options = new DialogOptions { CloseButton = true };
-        // var dialog = await _dialogService.ShowAsync<ConfirmDialog>("Confirm", parameters, options);
-        // var result = await dialog.Result;
-        // if (result?.Canceled is true) return false;
-        // return result?.Data is bool b && b;
-
-        return true;
     }
 
     private async Task OpenAuthorize()

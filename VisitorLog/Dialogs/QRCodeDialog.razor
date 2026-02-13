@@ -1,7 +1,6 @@
 @using VisitorLog.Models
 @using VisitorLog.Services.QRCodeManagementService
 @inject IQRCodeManagementService _qrCodeService
-@inject IJSRuntime _jsRuntime
 
 <MudDialog>
     <TitleContent>
@@ -25,12 +24,6 @@
             {
                 <MudStack AlignItems="AlignItems.Center" Spacing="2">
                     <MudImage Src="@qrImageSrc" Alt="QR Code" Width="200" Height="200" />
-                    <MudButton StartIcon="@Icons.Material.Filled.Download" 
-                               Color="Color.Primary" 
-                               Variant="Variant.Filled" 
-                               OnClick="DownloadQRCode">
-                        Download QR Code
-                    </MudButton>
                 </MudStack>
             }
         </MudStack>
@@ -67,8 +60,7 @@
 
     private void OnQRCodeChanged(string value)
     {
-		Model.QRCode = value;
-
+        Model.QRCode = value;
         GenerateQRImage();
     }
 
@@ -79,15 +71,6 @@
             qrImageBytes = _qrCodeService.GenerateQRCodeImage(Model.QRCode);
             qrImageSrc = $"data:image/png;base64,{Convert.ToBase64String(qrImageBytes)}";
             StateHasChanged();
-        }
-    }
-
-    private async Task DownloadQRCode()
-    {
-        if (qrImageBytes != null)
-        {
-            var fileName = $"QRCode_{Model.QRCodeAlias ?? "Download"}_{DateTime.Now:yyyyMMddHHmmss}.png";
-            await _jsRuntime.InvokeVoidAsync("downloadFile", fileName, Convert.ToBase64String(qrImageBytes));
         }
     }
 

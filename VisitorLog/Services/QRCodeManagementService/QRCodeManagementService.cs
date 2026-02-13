@@ -36,8 +36,13 @@ namespace VisitorLog.Services.QRCodeManagementService
 
         public async Task UpdateQRCodeAsync(QRCodeModel qrCode)
         {
-            _context.QRCodes.Update(qrCode);
-            await _context.SaveChangesAsync();
+            var existing = await _context.QRCodes.FindAsync(qrCode.QRCodeId);
+            if (existing != null)
+            {
+                existing.QRCode = qrCode.QRCode;
+                existing.QRCodeAlias = qrCode.QRCodeAlias;
+                await _context.SaveChangesAsync();
+            }
         }
 
         public async Task DeleteQRCodeAsync(Guid qrCodeId)

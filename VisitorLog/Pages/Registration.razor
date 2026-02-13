@@ -1,76 +1,91 @@
 ﻿@page "/registration"
 @using VisitorLog.Models
 @using VisitorLog.Services.VisitorManagementService
+@using VisitorLog.Services.Auth
 @inject IVisitorManagementService _visitorService
 @inject IDialogService _dialogService
 @inject ISnackbar _snackbar
+@inject SimpleAuthStateProvider _authProvider
 
-<MudContainer MaxWidth="MaxWidth.False" Style="margin-top: 60px;">
-    <MudPaper Class="pa-4">
-        <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-            <MudText Typo="Typo.h6">Visitor Registration</MudText>
-            <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
-                <MudTextField Placeholder="Search" 
-                              @bind-Value="search" 
-                              Adornment="Adornment.Start" 
-                              AdornmentIcon="@Icons.Material.Filled.Search" 
-                              Immediate="true"
-                              OnImmediateValueChanged="OnSearchChanged" />
-                <MudSpacer/>
-                <MudIconButton Icon="@Icons.Material.Filled.Add" 
-                               Color="Color.Primary" 
-                               OnClick="AddVisitor" />
-            </MudStack>
-        </MudStack>
+<CascadingAuthenticationState>
+    <MudContainer MaxWidth="MaxWidth.False" Style="margin-top: 60px;">
+        <AuthorizeView>
+            <Authorized>
+                <MudPaper Class="pa-4">
+                    <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                        <MudText Typo="Typo.h6">Visitor Registration</MudText>
+                        <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                            <MudTextField Placeholder="Search" 
+                                          @bind-Value="search" 
+                                          Adornment="Adornment.Start" 
+                                          AdornmentIcon="@Icons.Material.Filled.Search" 
+                                          Immediate="true"
+                                          OnImmediateValueChanged="OnSearchChanged" />
+                            <MudSpacer/>
+                            <MudIconButton Icon="@Icons.Material.Filled.Add" 
+                                           Color="Color.Primary" 
+                                           OnClick="AddVisitor" />
+                        </MudStack>
+                    </MudStack>
 
-        <MudTable Context="visitor" Items="Filtered" Hover="true" Class="mt-4">
-            <ColGroup>
-                <col style="width: 80px;"/>
-                <col/>
-                <col/>
-                <col/>
-                <col style="width: 10%;"/>
-            </ColGroup>
-            <HeaderContent>
-                <MudTh>Picture</MudTh>
-                <MudTh>Name</MudTh>
-                <MudTh>Contact Number</MudTh>
-                <MudTh>Purpose</MudTh>
-                <MudTh></MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="Picture">
-                    @if (visitor.Picture?.Length > 0)
-                    {
-                        <MudImage Src="@($"data:image/png;base64,{Convert.ToBase64String(visitor.Picture)}")" 
-                                  Alt="@visitor.Name" 
-                                  Width="50" 
-                                  Height="50" 
-                                  ObjectFit="ObjectFit.Cover"
-                                  Class="rounded" />
-                    }
-                    else
-                    {
-                        <MudAvatar Color="Color.Primary" Size="Size.Medium">@visitor.Name.FirstOrDefault()</MudAvatar>
-                    }
-                </MudTd>
-                <MudTd DataLabel="Name">@visitor.Name</MudTd>
-                <MudTd DataLabel="Contact">@visitor.ContactNumber</MudTd>
-                <MudTd DataLabel="Purpose">@visitor.PurposeOfVisit</MudTd>
-                <MudTd Class="text-center">
-                    <MudIconButton Icon="@Icons.Material.Filled.Edit" 
-                                   Color="Color.Primary" 
-                                   Size="Size.Small" 
-                                   OnClick="@(() => EditVisitor(visitor))" />
-                    <MudIconButton Icon="@Icons.Material.Filled.Delete" 
-                                   Color="Color.Error" 
-                                   Size="Size.Small" 
-                                   OnClick="@(() => DeleteVisitor(visitor))" />
-                </MudTd>
-            </RowTemplate>
-        </MudTable>
-    </MudPaper>
-</MudContainer>
+                    <MudTable Context="visitor" Items="Filtered" Hover="true" Class="mt-4">
+                        <ColGroup>
+                            <col style="width: 80px;"/>
+                            <col/>
+                            <col/>
+                            <col/>
+                            <col style="width: 10%;"/>
+                        </ColGroup>
+                        <HeaderContent>
+                            <MudTh>Picture</MudTh>
+                            <MudTh>Name</MudTh>
+                            <MudTh>Contact Number</MudTh>
+                            <MudTh>Purpose</MudTh>
+                            <MudTh></MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Picture">
+                                @if (visitor.Picture?.Length > 0)
+                                {
+                                    <MudImage Src="@($"data:image/png;base64,{Convert.ToBase64String(visitor.Picture)}")" 
+                                              Alt="@visitor.Name" 
+                                              Width="50" 
+                                              Height="50" 
+                                              ObjectFit="ObjectFit.Cover"
+                                              Class="rounded" />
+                                }
+                                else
+                                {
+                                    <MudAvatar Color="Color.Primary" Size="Size.Medium">@visitor.Name.FirstOrDefault()</MudAvatar>
+                                }
+                            </MudTd>
+                            <MudTd DataLabel="Name">@visitor.Name</MudTd>
+                            <MudTd DataLabel="Contact">@visitor.ContactNumber</MudTd>
+                            <MudTd DataLabel="Purpose">@visitor.PurposeOfVisit</MudTd>
+                            <MudTd Class="text-center">
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" 
+                                               Color="Color.Primary" 
+                                               Size="Size.Small" 
+                                               OnClick="@(() => EditVisitor(visitor))" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                               Color="Color.Error" 
+                                               Size="Size.Small" 
+                                               OnClick="@(() => DeleteVisitor(visitor))" />
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                </MudPaper>
+            </Authorized>
+            <NotAuthorized>
+                <MudPaper Class="pa-6 d-flex flex-column align-center">
+                    <MudText Typo="Typo.h6">You are not authorized</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-4">Please authorize to register visitors.</MudText>
+                    <MudButton Color="Color.Primary" OnClick="OpenAuthorize">Authorize</MudButton>
+                </MudPaper>
+            </NotAuthorized>
+        </AuthorizeView>
+    </MudContainer>
+</CascadingAuthenticationState>
 
 @code {
     private List<VisitorModel> items = new();
@@ -148,5 +163,23 @@
         var result = await dialog.Result;
         if (result?.Canceled is true) return false;
         return result?.Data is bool b && b;
+    }
+
+    private async Task OpenAuthorize()
+    {
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, BackdropClick = false };
+        var dialog = await _dialogService.ShowAsync<AuthorizedDialog>("Authorize", options);
+        var result = await dialog.Result;
+
+        if (!result?.Canceled is true && result?.Data is bool ok && ok)
+        {
+            await _authProvider.SignInAsync("admin");
+            _snackbar.Add("Authorized. You are signed in.", Severity.Success);
+            await LoadAsync();
+        }
+        else
+        {
+            _snackbar.Add("Authorization failed or cancelled.", Severity.Warning);
+        }
     }
 }
