@@ -128,3 +128,11 @@ canvas {
     background-color: #940018 !important;
     color: white !important;
 }
+
+.main-content-bg {
+    background-image: linear-gradient(rgba(200, 200, 200, 0.7), rgba(180, 180, 180, 0.75)), url('images/bg-3.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    min-height: 100vh;
+}

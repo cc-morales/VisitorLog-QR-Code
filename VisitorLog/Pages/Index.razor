@@ -5,18 +5,21 @@
 @inject ISnackbar _snackbar
 @inject NavigationManager _navigationManager
     
-<MudPaper Style="margin-top: 80px;" Elevation="0">
-    <MudPaper Elevation="1" Class="d-flex align-items-center justify-content-center mb-4 flex-grow-0">
-        <MudItem xs="12" md="4" lg="6">
+
+<MudGrid Class="mb-4" Style="margin-top: 80px;" Spacing="0">
+    <MudItem xs="12" lg="3"></MudItem>
+    <MudItem xs="12" md="4" lg="6">
+        <MudPaper Elevation="1" Class="pa-1">
             <MudImage Class="custom-image" Src="css/images/bg.png"></MudImage>
-        </MudItem>
-    </MudPaper>
-    <MudStack AlignItems="AlignItems.Center">
-        <MudButton Class="custom-button-2" OnClick="OpenAccountSignIn">ACCOUNT SIGN IN/LOG IN</MudButton>
-        <MudButton Class="custom-button-2" OnClick="NavigateToQRCodes">GENERATE NEW QR PASS</MudButton>
-        <MudButton Class="custom-button-2" OnClick="OpenAboutVisits">ABOUT V.I.S.I.T.S</MudButton>
-    </MudStack>
-</MudPaper>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" lg="3"></MudItem>
+</MudGrid>
+<MudStack AlignItems="AlignItems.Center">
+    <MudButton Class="custom-button-2" OnClick="OpenAccountSignIn">ACCOUNT SIGN IN/LOG IN</MudButton>
+    <MudButton Class="custom-button-2" OnClick="NavigateToQRCodes">GENERATE NEW QR PASS</MudButton>
+    <MudButton Class="custom-button-2" OnClick="OpenAboutVisits">ABOUT V.I.S.I.T.S</MudButton>
+</MudStack>
 
 @code {
     private async Task OpenAccountSignIn()

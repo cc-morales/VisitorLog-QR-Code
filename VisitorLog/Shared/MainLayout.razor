@@ -17,7 +17,7 @@
 
 <PageTitle>VisitorLog</PageTitle>
 
-<MudLayout>
+<MudLayout Class="main-content-bg">
     <MudAppBar Elevation="1">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
         <MudText Typo="Typo.h6">@GetPageTitle()</MudText>
@@ -35,7 +35,7 @@
             <MudNavLink Class="custom-button" Href="/timestamp" Match="NavLinkMatch.All">LOGS</MudNavLink>
         </MudNavMenu>
     </MudDrawer>
-    <MudMainContent Class="pa-2 main-content-bg">
+    <MudMainContent Class="pa-2">
         @Body
     </MudMainContent>
 </MudLayout>
