@@ -5,6 +5,7 @@
 @inject ILogManagementService _logService
 @inject ISnackbar _snackbar
 @inject IJSRuntime JS
+@implements IAsyncDisposable
 
 <MudContainer MaxWidth="MaxWidth.False" Style="margin-top: 60px;">
     <MudPaper Class="pa-4">
