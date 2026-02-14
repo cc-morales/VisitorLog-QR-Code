@@ -8,13 +8,12 @@
 @implements IAsyncDisposable
 
 <MudContainer MaxWidth="MaxWidth.False" Style="margin-top: 60px;">
-    <MudPaper Class="pa-4">
-        <MudText Typo="Typo.h6" Class="mb-4">QR Code Scanner</MudText>
+    <MudPaper Class="pb-2">
+        <MudText Class="pa-1 header-table mb-4" Typo="Typo.h6">QR Code Scanner</MudText>
 
-        <MudGrid>
+        <MudGrid Class="px-4">
             <MudItem xs="12" md="6" lg="6">
-                <MudPaper Class="pa-4" Elevation="2" Style="overflow: hidden;">
-                    <MudText Typo="Typo.subtitle1" Class="mb-2">Scanner</MudText>
+                <MudPaper Class="@($"pa-4 {scannerPaperVisibilityClass}")" Elevation="2" Style="overflow: hidden;">
                     <div style="position: relative; width: 100%; max-width: 100%;">
                         <QRCodeScanner Width="100%" ShowOutput="false" />
                     </div>
@@ -23,21 +22,21 @@
 
             <MudItem xs="12" md="6" lg="6">
                 <MudPaper Class="pa-4" Elevation="2">
-                    <MudGrid>
+                    <MudGrid Spacing="0">
                         <MudItem xs="12">
-                            <MudText Typo="Typo.subtitle1">Scan Result</MudText>
+                            <MudText Class="pa-1 header-table mb-4" Typo="Typo.subtitle1">Scan Result</MudText>
                             <MudDivider Class="my-2" />
                         </MudItem>
 
                         <MudItem xs="12">
-                            <MudText Typo="Typo.body2" Color="Color.Default">QR Code Detected:</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Default">QR Code:</MudText>
                             @if (!string.IsNullOrEmpty(detectedQRCode))
                             {
-                                <MudChip T=string Color="Color.Success" Size="Size.Small">@detectedQRCode</MudChip>
+                                <MudChip T=string Color="Color.Success" Size="Size.Medium">@detectedQRCode</MudChip>
                             }
                             else
                             {
-                                <MudText Typo="Typo.caption" Color="Color.Default">No code detected</MudText>
+                                <MudAlert Severity="Severity.Warning">No code detected</MudAlert>
                             }
                         </MudItem>
 
@@ -45,7 +44,8 @@
                             <MudText Typo="Typo.body2" Color="Color.Default">Visitor:</MudText>
                             @if (!string.IsNullOrEmpty(visitorName))
                             {
-                                <MudText Typo="Typo.body1">@visitorName</MudText>
+                                <MudChip T=string Color="Color.Success" Size="Size.Medium">@visitorName</MudChip>
+                                @* <MudText Typo="Typo.body1">@visitorName</MudText> *@
                             }
                             else
                             {
@@ -134,6 +134,7 @@
     private DateTime? timeIn;
     private DateTime? timeOut;
     private bool isProcessing = false;
+    private string scannerPaperVisibilityClass = string.Empty;
     private QRCodeScannerJsInterop? _qrCodeScannerJsInterop;
     private Action<string>? _onQrCodeScanAction;
 
@@ -158,6 +159,9 @@
         try
         {
             detectedQRCode = qrCode;
+            
+            // Hide scanner paper on mobile after detection
+            scannerPaperVisibilityClass = "scanner-paper-hidden";
             await InvokeAsync(StateHasChanged);
 
             var qrSet = await _logService.GetQRSetByQRCodeAsync(qrCode);
@@ -167,7 +171,7 @@
                 _snackbar.Add("QR Code does not exist or is not assigned to any visitor.", Severity.Error);
                 detectedQRCode = null;
                 await InvokeAsync(StateHasChanged);
-                await Task.Delay(3000);
+                await Task.Delay(5000);
                 _snackbar.Add("Ready for next scan.", Severity.Info);
                 return;
             }
@@ -209,18 +213,21 @@
 
             _snackbar.Add(message, Severity.Success);
 
-            await Task.Delay(3000);
-            
+            // Hold for 5 seconds before showing scanner again
+            await Task.Delay(5000);
+
             _snackbar.Add("Ready for next scan.", Severity.Info);
         }
         catch (Exception ex)
         {
             _snackbar.Add($"Error processing scan: {ex.Message}", Severity.Error);
-            await Task.Delay(3000);
+            await Task.Delay(5000);
             _snackbar.Add("Ready for next scan.", Severity.Info);
         }
         finally
         {
+            // Show scanner paper again
+            scannerPaperVisibilityClass = string.Empty;
             ResetDisplay();
             isProcessing = false;
             await InvokeAsync(StateHasChanged);
@@ -239,7 +246,13 @@
     {
         if (_qrCodeScannerJsInterop != null)
         {
-            await _qrCodeScannerJsInterop.StopRecording();
+            try
+            {
+                await _qrCodeScannerJsInterop.StopRecording();
+            } catch(Exception e)
+            {
+                _navigationManager.NavigateTo("/scan", true);
+            }
         }
     }
 }

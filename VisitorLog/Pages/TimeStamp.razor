@@ -11,8 +11,8 @@
     <MudContainer MaxWidth="MaxWidth.False" Style="margin-top: 60px;">
         <AuthorizeView>
             <Authorized>
-                <MudPaper Class="pa-4">
-                    <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                <MudPaper>
+                    <MudStack Class="pa-1 header-table" Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
                         <MudText Typo="Typo.h6">Visitor Logs</MudText>
                         <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
                             <MudTextField Placeholder="Search" 
@@ -25,13 +25,13 @@
                     </MudStack>
 
                     <MudTable Context="session" Items="FilteredSessions" Hover="true" Class="mt-4">
-                        <ColGroup>
+                        @* <ColGroup>
                             <col/>
                             <col/>
-                            <col style="width: 180px;"/>
-                            <col style="width: 180px;"/>
-                            <col style="width: 100px;"/>
-                        </ColGroup>
+                            <col style="width: 10%;"/>
+                            <col style="width: 10%;" />
+                            <col style="width: 10%;" />
+                        </ColGroup> *@
                         <HeaderContent>
                             <MudTh>Visitor</MudTh>
                             <MudTh>QR Code</MudTh>
@@ -64,10 +64,10 @@
                                     <MudText Typo="Typo.caption">-</MudText>
                                 }
                             </MudTd>
-                            <MudTd Class="text-center">
+                            <MudTd Class="text-end">
                                 <MudIconButton Icon="@Icons.Material.Filled.Visibility" 
                                                Color="Color.Info" 
-                                               Size="Size.Small" 
+                                               Size="Size.Medium"
                                                OnClick="@(() => ViewVisitor(session.Visitor))"
                                                Disabled="@(session.Visitor == null)" />
                             </MudTd>

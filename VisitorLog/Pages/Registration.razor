@@ -13,8 +13,8 @@
     <MudContainer MaxWidth="MaxWidth.False" Style="margin-top: 60px;">
         <AuthorizeView>
             <Authorized>
-                <MudPaper Class="pa-4">
-                    <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                <MudPaper>
+                    <MudStack Class="pa-1 header-table" Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
                         <MudText Typo="Typo.h6">Visitor Registration</MudText>
                         <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
                             <MudTextField Placeholder="Search" 
@@ -31,14 +31,6 @@
                     </MudStack>
 
                     <MudTable Context="visitor" Items="Filtered" Hover="true" Class="mt-4">
-                        <ColGroup>
-                            <col style="width: 80px;"/>
-                            <col/>
-                            <col/>
-                            <col/>
-                            <col style="width: 150px;"/>
-                            <col style="width: 15%;"/>
-                        </ColGroup>
                         <HeaderContent>
                             <MudTh>Picture</MudTh>
                             <MudTh>Name</MudTh>
@@ -51,12 +43,15 @@
                             <MudTd DataLabel="Picture">
                                 @if (visitor.Picture?.Length > 0)
                                 {
-                                    <MudImage Src="@($"data:image/png;base64,{Convert.ToBase64String(visitor.Picture)}")" 
-                                              Alt="@visitor.Name" 
-                                              Width="50" 
-                                              Height="50" 
-                                              ObjectFit="ObjectFit.Cover"
-                                              Class="rounded" />
+                                        <MudAvatar
+                                               Size="Size.Large" >
+                                        <MudImage Src="@($"data:image/png;base64,{Convert.ToBase64String(visitor.Picture)}")"
+                                                  Alt="@visitor.Name"
+                                                  Width="50"
+                                                  Height="50"
+                                                  ObjectFit="ObjectFit.Cover"
+                                                  Class="rounded" />
+                                    </MudAvatar>
                                 }
                                 else
                                 {
@@ -76,12 +71,12 @@
                                     <MudChip T="string" Color="Color.Default" Size="Size.Small">Not Set</MudChip>
                                 }
                             </MudTd>
-                            <MudTd Class="text-center">
+                            <MudTd Class="text-end">
                                 @if (qrSetCache.TryGetValue(visitor.VisitorId, out var existingSet) && existingSet != null)
                                 {
                                     <MudIconButton Icon="@Icons.Material.Filled.QrCode" 
                                                    Color="Color.Warning" 
-                                                   Size="Size.Small" 
+                                                   Size="Size.Medium" 
                                                    OnClick="@(() => RemoveQRCode(visitor))" 
                                                    Title="Remove QR Code" />
                                 }
@@ -89,17 +84,17 @@
                                 {
                                     <MudIconButton Icon="@Icons.Material.Filled.QrCode" 
                                                    Color="Color.Primary" 
-                                                   Size="Size.Small" 
+                                                   Size="Size.Medium" 
                                                    OnClick="@(() => SetQRCode(visitor))" 
                                                    Title="Set QR Code" />
                                 }
                                 <MudIconButton Icon="@Icons.Material.Filled.Edit" 
                                                Color="Color.Primary" 
-                                               Size="Size.Small" 
+                                               Size="Size.Medium" 
                                                OnClick="@(() => EditVisitor(visitor))" />
                                 <MudIconButton Icon="@Icons.Material.Filled.Delete" 
                                                Color="Color.Error" 
-                                               Size="Size.Small" 
+                                               Size="Size.Medium"
                                                OnClick="@(() => DeleteVisitor(visitor))" />
                             </MudTd>
                         </RowTemplate>

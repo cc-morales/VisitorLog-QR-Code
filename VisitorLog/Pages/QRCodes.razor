@@ -13,8 +13,8 @@
     <MudContainer MaxWidth="MaxWidth.False" Style="margin-top: 60px;">
         <AuthorizeView>
             <Authorized>
-                <MudPaper Class="pa-4">
-                    <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                <MudPaper Elevation="1">
+                    <MudStack Class="pa-1 header-table" Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
                         <MudText Typo="Typo.h6">QR Codes</MudText>
                         <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
                             <MudTextField Placeholder="Search" 
@@ -30,11 +30,11 @@
                         </MudStack>
                     </MudStack>
 
-                    <MudTable Context="qrcode" Items="Filtered" Hover="true" Class="mt-4">
+                    <MudTable Context="qrcode" Items="Filtered" Hover="true" Class="pa-4 mt-4">
                         <ColGroup>
+                            @* <col/>
                             <col/>
-                            <col/>
-                            <col style="width: 15%;"/>
+                            <col style="width: *@ 15%;"/>
                         </ColGroup>
                         <HeaderContent>
                             <MudTh>QR Code</MudTh>
@@ -44,14 +44,14 @@
                         <RowTemplate>
                             <MudTd DataLabel="QR Code">@qrcode.QRCode</MudTd>
                             <MudTd DataLabel="Alias">@qrcode.QRCodeAlias</MudTd>
-                            <MudTd Class="text-center">
+                            <MudTd Class="text-end">
                                 <MudIconButton Icon="@Icons.Material.Filled.Download" 
                                                Color="Color.Success" 
-                                               Size="Size.Small" 
+                                               Size="Size.Medium"
                                                OnClick="@(() => DownloadQRCode(qrcode))" />
                                 <MudIconButton Icon="@Icons.Material.Filled.Edit" 
                                                Color="Color.Primary" 
-                                               Size="Size.Small" 
+                                               Size="Size.Medium" 
                                                OnClick="@(() => EditQRCode(qrcode))" />
                             </MudTd>
                         </RowTemplate>
