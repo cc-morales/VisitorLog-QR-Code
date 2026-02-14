@@ -29,16 +29,40 @@ namespace VisitorLog.Services.QRSetManagementService
             }
         }
 
-        public async Task AddQRSetAsync(QRSetModel qrSet)
+        public async Task<QRSetModel?> GetQRSetByQRCodeIdAsync(Guid qrCodeId)
         {
-            var existing = await _context.QRSets
+            try
+            {
+                return await _context.QRSets
+                    .AsNoTracking()
+                    .Include(x => x.Visitor)
+                    .Include(x => x.QRCode)
+                    .FirstOrDefaultAsync(x => x.QRCodeId == qrCodeId);
+            }
+            catch (OperationCanceledException)
+            {
+                return null;
+            }
+        }
+
+        public async Task<bool> AddQRSetAsync(QRSetModel qrSet)
+        {
+            var existingForQRCode = await _context.QRSets
+                .FirstOrDefaultAsync(x => x.QRCodeId == qrSet.QRCodeId);
+
+            if (existingForQRCode != null && existingForQRCode.VisitorId != qrSet.VisitorId)
+            {
+                return false;
+            }
+
+            var existingForVisitor = await _context.QRSets
                 .FirstOrDefaultAsync(x => x.VisitorId == qrSet.VisitorId);
 
-            if (existing != null)
+            if (existingForVisitor != null)
             {
-                existing.QRCodeId = qrSet.QRCodeId;
-                existing.QRCode = null;
-                existing.Visitor = null;
+                existingForVisitor.QRCodeId = qrSet.QRCodeId;
+                existingForVisitor.QRCode = null;
+                existingForVisitor.Visitor = null;
             }
             else
             {
@@ -46,6 +70,7 @@ namespace VisitorLog.Services.QRSetManagementService
             }
 
             await _context.SaveChangesAsync();
+            return true;
         }
 
         public async Task DeleteQRSetAsync(Guid qrSetId)

@@ -164,9 +164,17 @@
                 QRCodeId = qr.QRCodeId
             };
 
-            await _qrSetService.AddQRSetAsync(qrSet);
-            await LoadAsync();
-            _snackbar.Add($"QR Code '{qr.QRCodeAlias}' assigned to {visitor.Name}", Severity.Success);
+            var success = await _qrSetService.AddQRSetAsync(qrSet);
+            
+            if (success)
+            {
+                await LoadAsync();
+                _snackbar.Add($"QR Code '{qr.QRCodeAlias}' assigned to {visitor.Name}", Severity.Success);
+            }
+            else
+            {
+                _snackbar.Add($"QR Code '{qr.QRCodeAlias}' is already assigned to another visitor.", Severity.Error);
+            }
         }
     }
 
