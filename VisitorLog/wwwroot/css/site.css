@@ -124,3 +124,7 @@ canvas {
     max-width: 100%; /* Ensures the image never exceeds the container's width */
     height: auto; /* Maintains the aspect ratio */
 }
+.mud-drawer-header {
+    background-color: #940018 !important;
+    color: white !important;
+}
