@@ -1,0 +1,67 @@
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h5">About V.I.S.I.T.S</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Default">Visitor Identification System with Integrated Tracking Solution</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <div>
+                <MudText Typo="Typo.h6" Color="Color.Primary">System Context</MudText>
+                <MudText Typo="Typo.body2" Class="mt-2">
+                    V.I.S.I.T.S is a comprehensive visitor management system designed to streamline and secure the process 
+                    of tracking visitors in organizations, offices, and facilities. The system leverages QR code technology 
+                    to provide fast, contactless, and accurate visitor identification and logging.
+                </MudText>
+            </div>
+
+            <MudDivider />
+
+            <div>
+                <MudText Typo="Typo.h6" Color="Color.Primary">Objective</MudText>
+                <MudStack Spacing="1" Class="mt-2">
+                    <MudText Typo="Typo.body2">• Automate visitor registration and tracking processes</MudText>
+                    <MudText Typo="Typo.body2">• Enhance security through unique QR code assignment</MudText>
+                    <MudText Typo="Typo.body2">• Maintain accurate time-in and time-out records</MudText>
+                    <MudText Typo="Typo.body2">• Provide real-time visitor status monitoring</MudText>
+                    <MudText Typo="Typo.body2">• Generate comprehensive visitor logs and reports</MudText>
+                </MudStack>
+            </div>
+
+            <MudDivider />
+
+            <div>
+                <MudText Typo="Typo.h6" Color="Color.Primary">Purpose</MudText>
+                <MudText Typo="Typo.body2" Class="mt-2">
+                    The primary purpose of V.I.S.I.T.S is to replace traditional manual visitor logbooks with a modern, 
+                    digital solution that improves efficiency, security, and data accuracy. By utilizing QR codes, the 
+                    system enables touchless check-in/check-out processes, reduces administrative overhead, and provides 
+                    instant access to visitor history and analytics.
+                </MudText>
+            </div>
+
+            <MudDivider />
+
+            <div>
+                <MudText Typo="Typo.h6" Color="Color.Primary">Key Features</MudText>
+                <MudStack Spacing="1" Class="mt-2">
+                    <MudText Typo="Typo.body2">✓ Visitor registration with photo capture</MudText>
+                    <MudText Typo="Typo.body2">✓ QR code generation and management</MudText>
+                    <MudText Typo="Typo.body2">✓ Real-time QR code scanning for check-in/check-out</MudText>
+                    <MudText Typo="Typo.body2">✓ Automated time-in/time-out logging</MudText>
+                    <MudText Typo="Typo.body2">✓ Comprehensive visitor logs and history</MudText>
+                    <MudText Typo="Typo.body2">✓ Secure authorization for administrative functions</MudText>
+                </MudStack>
+            </div>
+        </MudStack>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Close">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+
+    private void Close() => MudDialog.Close();
+}

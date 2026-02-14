@@ -1,8 +1,9 @@
 ﻿@page "/"
-
-@inject IJSRuntime JS
-@using ReactorBlazorQRCodeScanner
-@using VisitorLog.Models
+@using VisitorLog.Services.Auth
+@inject IDialogService _dialogService
+@inject SimpleAuthStateProvider _authProvider
+@inject ISnackbar _snackbar
+@inject NavigationManager _navigationManager
     
 <MudPaper Style="margin-top: 80px;" Elevation="0">
     <MudPaper Elevation="1" Class="d-flex align-items-center justify-content-center mb-4 flex-grow-0">
@@ -11,71 +12,39 @@
         </MudItem>
     </MudPaper>
     <MudStack AlignItems="AlignItems.Center">
-        <MudButton Class="custom-button-2">ACCOUNT SIGN IN/LOG IN</MudButton>
-        <MudButton Class="custom-button-2">GENERATE NEW QR PASS</MudButton>
-        <MudButton Class="custom-button-2">ABOUT V.I.S.I.T.S</MudButton>
+        <MudButton Class="custom-button-2" OnClick="OpenAccountSignIn">ACCOUNT SIGN IN/LOG IN</MudButton>
+        <MudButton Class="custom-button-2" OnClick="NavigateToQRCodes">GENERATE NEW QR PASS</MudButton>
+        <MudButton Class="custom-button-2" OnClick="OpenAboutVisits">ABOUT V.I.S.I.T.S</MudButton>
     </MudStack>
 </MudPaper>
-@* <PageTitle>Scanner</PageTitle>
-
-@if (!_found)
-{
-        <MudStack AlignItems="AlignItems.Center" Class="px-2" Spacing="2" Style="margin-top: 50px;">
-            <MudText Typo="Typo.button">SCAN QR CODE</MudText>
-            <QRCodeScanner LoadingMessage="Scanning..."/>
-            <Logs @ref="logsRef"/>
-        </MudStack>
-   
-} else
-{
-    <Visitor VisitorModel="_currentVisitor" OnAdd="Refresh"/> 
-} *@
 
 @code {
+    private async Task OpenAccountSignIn()
+    {
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, BackdropClick = false };
+        var dialog = await _dialogService.ShowAsync<AuthorizedDialog>("Account Sign In", options);
+        var result = await dialog.Result;
 
-    // private QRCodeScannerJsInterop? _qrCodeScannerJsInterop;
-    // private Action<string>? _onQrCodeScanAction;
+        if (!result?.Canceled is true && result?.Data is bool ok && ok)
+        {
+            await _authProvider.SignInAsync("admin");
+            _snackbar.Add("Authorized. You are signed in.", Severity.Success);
+            _navigationManager.NavigateTo("/qrcodes");
+        }
+        else
+        {
+            _snackbar.Add("Authorization failed or cancelled.", Severity.Warning);
+        }
+    }
 
-    // private static bool _found;
-    // private VisitorModel? _currentVisitor = new();
-    // private Logs? logsRef;
+    private void NavigateToQRCodes()
+    {
+        _navigationManager.NavigateTo("/qrcodes");
+    }
 
-    // protected override async Task OnAfterRenderAsync(bool firstRender)
-    // {
-    //     if (firstRender)
-    //     {
-    //         _onQrCodeScanAction = async (code) => await OnQrCodeScan(code);
-
-    //         _qrCodeScannerJsInterop = new QRCodeScannerJsInterop(JS);
-
-    //         await _qrCodeScannerJsInterop.Init(_onQrCodeScanAction);
-    //     }
-    // }
-
-    // private async Task Refresh()
-    // {
-    //     await logsRef!.LoadAsync();
-
-    //     _navigationManager.NavigateTo("/", true);
-
-    //     _found = false;
-
-    //     await InvokeAsync(StateHasChanged);
-
-    // }
-
-    // private async Task OnQrCodeScan(string code)
-    // {
-    //     Console.WriteLine($"QR CODE - {code}");
-
-    //     if (string.IsNullOrEmpty(code)) return;
-
-    //     _currentVisitor = await _qrCodeService.GetVisitor(code);
-
-    //     if (_currentVisitor is null) return;
-
-    //     _found = true;
-
-    //     await InvokeAsync(StateHasChanged);
-    // }
+    private async Task OpenAboutVisits()
+    {
+        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        await _dialogService.ShowAsync<AboutVisitsDialog>("About V.I.S.I.T.S", options);
+    }
 }
