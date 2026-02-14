@@ -157,18 +157,22 @@
         try
         {
             detectedQRCode = qrCode;
+            await InvokeAsync(StateHasChanged);
 
             var qrSet = await _logService.GetQRSetByQRCodeAsync(qrCode);
 
             if (qrSet?.Visitor == null)
             {
-                _snackbar.Add("QR Code not registered to any visitor.", Severity.Warning);
+                _snackbar.Add("QR Code does not exist or is not assigned to any visitor.", Severity.Error);
+                detectedQRCode = null;
+                await InvokeAsync(StateHasChanged);
                 await Task.Delay(3000);
-                ResetDisplay();
+                _snackbar.Add("Ready for next scan.", Severity.Info);
                 return;
             }
 
             visitorName = qrSet.Visitor.Name;
+            await InvokeAsync(StateHasChanged);
 
             var lastLog = await _logService.GetLastLogByVisitorIdAsync(qrSet.VisitorId);
 
@@ -186,6 +190,8 @@
                 timeIn = lastLog.Timestamp;
             }
 
+            await InvokeAsync(StateHasChanged);
+
             var newLog = new LogModel
             {
                 VisitorId = qrSet.VisitorId,
@@ -201,18 +207,20 @@
                 : $"{visitorName} - Time Out recorded";
 
             _snackbar.Add(message, Severity.Success);
-            
+
             await Task.Delay(3000);
-            ResetDisplay();
+            
+            _snackbar.Add("Ready for next scan.", Severity.Info);
         }
         catch (Exception ex)
         {
             _snackbar.Add($"Error processing scan: {ex.Message}", Severity.Error);
             await Task.Delay(3000);
-            ResetDisplay();
+            _snackbar.Add("Ready for next scan.", Severity.Info);
         }
         finally
         {
+            ResetDisplay();
             isProcessing = false;
             await InvokeAsync(StateHasChanged);
         }
@@ -224,7 +232,6 @@
         visitorName = null;
         timeIn = null;
         timeOut = null;
-        InvokeAsync(StateHasChanged);
     }
 
     public async ValueTask DisposeAsync()
