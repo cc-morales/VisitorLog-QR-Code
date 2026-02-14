@@ -1,5 +1,189 @@
 ﻿@page "/timestamp"
+@using VisitorLog.Models
+@using VisitorLog.Services.LogManagementService
+@using VisitorLog.Services.Auth
+@inject ILogManagementService _logService
+@inject IDialogService _dialogService
+@inject ISnackbar _snackbar
+@inject SimpleAuthStateProvider _authProvider
+
+<CascadingAuthenticationState>
+    <MudContainer MaxWidth="MaxWidth.False" Style="margin-top: 60px;">
+        <AuthorizeView>
+            <Authorized>
+                <MudPaper Class="pa-4">
+                    <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                        <MudText Typo="Typo.h6">Visitor Logs</MudText>
+                        <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                            <MudTextField Placeholder="Search" 
+                                          @bind-Value="search" 
+                                          Adornment="Adornment.Start" 
+                                          AdornmentIcon="@Icons.Material.Filled.Search" 
+                                          Immediate="true"
+                                          OnImmediateValueChanged="OnSearchChanged" />
+                        </MudStack>
+                    </MudStack>
+
+                    <MudTable Context="session" Items="FilteredSessions" Hover="true" Class="mt-4">
+                        <ColGroup>
+                            <col/>
+                            <col/>
+                            <col style="width: 180px;"/>
+                            <col style="width: 180px;"/>
+                            <col style="width: 100px;"/>
+                        </ColGroup>
+                        <HeaderContent>
+                            <MudTh>Visitor</MudTh>
+                            <MudTh>QR Code</MudTh>
+                            <MudTh>Time In</MudTh>
+                            <MudTh>Time Out</MudTh>
+                            <MudTh></MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Visitor">@(session.Visitor?.Name ?? "-")</MudTd>
+                            <MudTd DataLabel="QR Code">@(session.QRCode?.QRCodeAlias ?? "-")</MudTd>
+                            <MudTd DataLabel="Time In">
+                                @if (session.TimeIn.HasValue)
+                                {
+                                    <MudText Typo="Typo.body2" Color="Color.Success">@session.TimeIn.Value.ToString("yyyy-MM-dd")</MudText>
+                                    <MudText Typo="Typo.caption">@session.TimeIn.Value.ToString("hh:mm:ss tt")</MudText>
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.caption">-</MudText>
+                                }
+                            </MudTd>
+                            <MudTd DataLabel="Time Out">
+                                @if (session.TimeOut.HasValue)
+                                {
+                                    <MudText Typo="Typo.body2" Color="Color.Error">@session.TimeOut.Value.ToString("yyyy-MM-dd")</MudText>
+                                    <MudText Typo="Typo.caption">@session.TimeOut.Value.ToString("hh:mm:ss tt")</MudText>
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.caption">-</MudText>
+                                }
+                            </MudTd>
+                            <MudTd Class="text-center">
+                                <MudIconButton Icon="@Icons.Material.Filled.Visibility" 
+                                               Color="Color.Info" 
+                                               Size="Size.Small" 
+                                               OnClick="@(() => ViewVisitor(session.Visitor))"
+                                               Disabled="@(session.Visitor == null)" />
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                </MudPaper>
+            </Authorized>
+            <NotAuthorized>
+                <MudPaper Class="pa-6 d-flex flex-column align-center">
+                    <MudText Typo="Typo.h6">You are not authorized</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-4">Please authorize to view logs.</MudText>
+                    <MudButton Color="Color.Primary" OnClick="OpenAuthorize">Authorize</MudButton>
+                </MudPaper>
+            </NotAuthorized>
+        </AuthorizeView>
+    </MudContainer>
+</CascadingAuthenticationState>
 
 @code {
+    private List<LogModel> items = new();
+    private List<VisitorSession> sessions = new();
+    private string search = string.Empty;
 
+    private IEnumerable<VisitorSession> FilteredSessions => string.IsNullOrWhiteSpace(search)
+        ? sessions
+        : sessions.Where(x => (x.Visitor?.Name ?? string.Empty).Contains(search, StringComparison.OrdinalIgnoreCase)
+                           || (x.QRCode?.QRCodeAlias ?? string.Empty).Contains(search, StringComparison.OrdinalIgnoreCase));
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        items = await _logService.GetLogsAsync();
+        ProcessSessions();
+        StateHasChanged();
+    }
+
+    private void ProcessSessions()
+    {
+        sessions.Clear();
+
+        var groupedByVisitor = items
+            .Where(x => x.VisitorId.HasValue)
+            .GroupBy(x => x.VisitorId.Value)
+            .OrderByDescending(g => g.Max(l => l.Timestamp));
+
+        foreach (var visitorGroup in groupedByVisitor)
+        {
+            var visitorLogs = visitorGroup.OrderBy(l => l.Timestamp).ToList();
+            
+            for (int i = 0; i < visitorLogs.Count; i++)
+            {
+                var log = visitorLogs[i];
+
+                if (log.EntryType == LogEntryType.TimeIn)
+                {
+                    var session = new VisitorSession
+                    {
+                        Visitor = log.Visitor,
+                        QRCode = log.QRCode,
+                        TimeIn = log.Timestamp
+                    };
+
+                    if (i + 1 < visitorLogs.Count && visitorLogs[i + 1].EntryType == LogEntryType.TimeOut)
+                    {
+                        session.TimeOut = visitorLogs[i + 1].Timestamp;
+                        i++;
+                    }
+
+                    sessions.Add(session);
+                }
+            }
+        }
+
+        sessions = sessions.OrderByDescending(s => s.TimeIn).ToList();
+    }
+
+    private void OnSearchChanged(string _) => StateHasChanged();
+
+    private async Task ViewVisitor(VisitorModel? visitor)
+    {
+        if (visitor == null)
+            return;
+
+        var parameters = new DialogParameters { ["Visitor"] = visitor };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        await _dialogService.ShowAsync<ViewVisitorDialog>("Visitor Details", parameters, options);
+    }
+
+    private async Task OpenAuthorize()
+    {
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, BackdropClick = false };
+        var dialog = await _dialogService.ShowAsync<AuthorizedDialog>("Authorize", options);
+        var result = await dialog.Result;
+
+        if (!result?.Canceled is true && result?.Data is bool ok && ok)
+        {
+            await _authProvider.SignInAsync("admin");
+            _snackbar.Add("Authorized. You are signed in.", Severity.Success);
+            await LoadAsync();
+        }
+        else
+        {
+            _snackbar.Add("Authorization failed or cancelled.", Severity.Warning);
+        }
+    }
+
+    private class VisitorSession
+    {
+        public VisitorModel? Visitor { get; set; }
+        public QRCodeModel? QRCode { get; set; }
+        public DateTime? TimeIn { get; set; }
+        public DateTime? TimeOut { get; set; }
+    }
 }

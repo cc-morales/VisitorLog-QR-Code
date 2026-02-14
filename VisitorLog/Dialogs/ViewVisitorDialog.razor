@@ -1,0 +1,65 @@
+@using VisitorLog.Models
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Visitor Details</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            @if (Visitor?.Picture?.Length > 0)
+            {
+                <MudStack AlignItems="AlignItems.Center">
+                    <MudImage Src="@($"data:image/png;base64,{Convert.ToBase64String(Visitor.Picture)}")" 
+                              Alt="@Visitor.Name" 
+                              Width="200" 
+                              Height="200" 
+                              ObjectFit="ObjectFit.Cover"
+                              Class="rounded" />
+                </MudStack>
+            }
+            else
+            {
+                <MudStack AlignItems="AlignItems.Center">
+                    <MudAvatar Color="Color.Primary" Size="Size.Large" Style="width: 100px; height: 100px;">
+                        <MudText Typo="Typo.h3">@Visitor?.Name.FirstOrDefault()</MudText>
+                    </MudAvatar>
+                </MudStack>
+            }
+
+            <MudDivider />
+
+            <MudStack Spacing="2">
+                <div>
+                    <MudText Typo="Typo.caption" Color="Color.Default">Name</MudText>
+                    <MudText Typo="Typo.body1">@Visitor?.Name</MudText>
+                </div>
+
+                <div>
+                    <MudText Typo="Typo.caption" Color="Color.Default">Contact Number</MudText>
+                    <MudText Typo="Typo.body1">@Visitor?.ContactNumber</MudText>
+                </div>
+
+                <div>
+                    <MudText Typo="Typo.caption" Color="Color.Default">Address</MudText>
+                    <MudText Typo="Typo.body1">@Visitor?.Address</MudText>
+                </div>
+
+                <div>
+                    <MudText Typo="Typo.caption" Color="Color.Default">Purpose of Visit</MudText>
+                    <MudText Typo="Typo.body1">@Visitor?.PurposeOfVisit</MudText>
+                </div>
+            </MudStack>
+        </MudStack>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Color="Color.Primary" OnClick="Close">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public VisitorModel? Visitor { get; set; }
+
+    private void Close() => MudDialog.Close();
+}
