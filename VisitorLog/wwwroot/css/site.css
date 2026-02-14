@@ -112,9 +112,17 @@ canvas {
     background-color: #940018 !important;
 }
 
-.mud-appbar {
+.mud-dialog-title {
     background-color: #940018 !important;
 }
+
+    .mud-dialog-title * {
+        color: white !important;
+    }
+
+    .mud-appbar {
+        background-color: #940018 !important;
+    }
 
 .mud-nav-link-text {
     text-align: center !important;
