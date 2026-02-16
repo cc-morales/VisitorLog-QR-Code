@@ -45,7 +45,6 @@
                             @if (!string.IsNullOrEmpty(visitorName))
                             {
                                 <MudChip T=string Color="Color.Success" Size="Size.Medium">@visitorName</MudChip>
-                                @* <MudText Typo="Typo.body1">@visitorName</MudText> *@
                             }
                             else
                             {
@@ -159,8 +158,6 @@
         try
         {
             detectedQRCode = qrCode;
-            
-            // Hide scanner paper on mobile after detection
             scannerPaperVisibilityClass = "scanner-paper-hidden";
             await InvokeAsync(StateHasChanged);
 
@@ -215,7 +212,6 @@
 
             _snackbar.Add(message, Severity.Success);
 
-            // Hold for 5 seconds before showing scanner again
             await Task.Delay(5000);
 
             _snackbar.Add("Ready for next scan.", Severity.Info);
@@ -228,7 +224,6 @@
         }
         finally
         {
-            // Show scanner paper again
             scannerPaperVisibilityClass = string.Empty;
             ResetDisplay();
             isProcessing = false;

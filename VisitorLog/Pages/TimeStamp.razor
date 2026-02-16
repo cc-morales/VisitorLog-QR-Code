@@ -143,8 +143,7 @@
                 if (log.EntryType == LogEntryType.TimeIn)
                 {
                     var userActions = new List<UserAction>();
-                    
-                    // Add TimeIn user (Blue chip)
+
                     if (!string.IsNullOrEmpty(log.UserFullName))
                     {
                         userActions.Add(new UserAction 
@@ -161,13 +160,11 @@
                         TimeIn = log.Timestamp
                     };
 
-                    // Check for corresponding TimeOut
                     if (i + 1 < visitorLogs.Count && visitorLogs[i + 1].EntryType == LogEntryType.TimeOut)
                     {
                         var timeOutLog = visitorLogs[i + 1];
                         session.TimeOut = timeOutLog.Timestamp;
-                        
-                        // Add TimeOut user (Red chip)
+
                         if (!string.IsNullOrEmpty(timeOutLog.UserFullName))
                         {
                             userActions.Add(new UserAction 
@@ -208,7 +205,7 @@
         {
             MaxWidth = MaxWidth.Small,
             FullWidth = true,
-            BackdropClick = true,  // ✅ FIXED
+            DisableBackdropClick = true,
             CloseButton = false
         };
         
@@ -235,6 +232,6 @@
     private class UserAction
     {
         public string UserFullName { get; set; } = string.Empty;
-        public bool IsTimeIn { get; set; }  // true = TimeIn (Blue), false = TimeOut (Red)
+        public bool IsTimeIn { get; set; }
     }
 }
