@@ -1,0 +1,71 @@
+@inject IAuthenticationService AuthService
+@inject SimpleAuthStateProvider AuthStateProvider
+@inject ISnackbar Snackbar
+@using VisitorLog.DTOs
+
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.h5" Align="Align.Center" GutterBottom="true">Login</MudText>
+        
+        <MudTextField @bind-Value="loginModel.Username" 
+                      Label="Username" 
+                      Variant="Variant.Outlined" 
+                      Margin="Margin.Dense"
+                      Required="true" 
+                      Class="mb-3" />
+        
+        <MudTextField @bind-Value="loginModel.Password" 
+                      Label="Password" 
+                      Variant="Variant.Outlined" 
+                      Margin="Margin.Dense"
+                      InputType="InputType.Password" 
+                      Required="true" 
+                      Class="mb-3" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="HandleLogin" Disabled="isLoading">
+            @if (isLoading)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+            }
+            else
+            {
+                <span>Login</span>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+
+    private LoginDto loginModel = new();
+    private bool isLoading = false;
+
+    private async Task HandleLogin()
+    {
+        if (string.IsNullOrWhiteSpace(loginModel.Username) || string.IsNullOrWhiteSpace(loginModel.Password))
+        {
+            Snackbar.Add("Please enter username and password", Severity.Warning);
+            return;
+        }
+
+        isLoading = true;
+        var result = await AuthService.LoginAsync(loginModel.Username, loginModel.Password);
+        isLoading = false;
+
+        if (result.Success)
+        {
+            await AuthStateProvider.MarkUserAsAuthenticated(result.Token!);
+            Snackbar.Add($"Welcome, {result.FullName}!", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(result));
+        }
+        else
+        {
+            Snackbar.Add(result.Message, Severity.Error);
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

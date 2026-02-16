@@ -1,0 +1,152 @@
+@page "/accounts"
+@using VisitorLog.Models
+@using Dialogs
+@attribute [Authorize(Roles = "Admin")]
+@inject IAuthenticationService AuthService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<CascadingAuthenticationState>
+    <MudContainer MaxWidth="MaxWidth.False" Style="margin-top: 60px;">
+        <AuthorizeView Roles="Admin">
+            <Authorized>
+                <MudPaper Elevation="1">
+                    <MudStack Class="pa-1 header-table" Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                        <MudText Typo="Typo.h6">Account Management</MudText>
+                        <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                            <MudTextField Placeholder="Search" 
+                                          @bind-Value="search" 
+                                          Adornment="Adornment.Start" 
+                                          AdornmentIcon="@Icons.Material.Filled.Search" 
+                                          Immediate="true"
+                                          OnImmediateValueChanged="OnSearchChanged" />
+                            <MudSpacer/>
+                            <MudIconButton Icon="@Icons.Material.Filled.Add" 
+                                           Color="Color.Primary" 
+                                           OnClick="OpenCreateAccountDialog" />
+                        </MudStack>
+                    </MudStack>
+
+                    <MudTable Context="user" Items="@Filtered" Hover="true" Class="mt-4" Loading="@isLoading">
+                        <HeaderContent>
+                            <MudTh>Username</MudTh>
+                            <MudTh>Email</MudTh>
+                            <MudTh>Full Name</MudTh>
+                            <MudTh></MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Username">@user.UserName</MudTd>
+                            <MudTd DataLabel="Email">@user.Email</MudTd>
+                            <MudTd DataLabel="Full Name">@user.FullName</MudTd>
+                            <MudTd Class="text-end">
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                               Color="Color.Error" 
+                                               Size="Size.Medium"
+                                               OnClick="@(() => DeleteUser(user.Id))" />
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                </MudPaper>
+            </Authorized>
+            <NotAuthorized>
+                <MudPaper Class="pa-6 d-flex flex-column align-center">
+                    <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Large" Color="Color.Error" Class="mb-4" />
+                    <MudText Typo="Typo.h6">You are not authorized</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-4">Please login to manage accounts.</MudText>
+                    <MudButton Color="Color.Primary" OnClick="OpenLoginDialog">Login</MudButton>
+                </MudPaper>
+            </NotAuthorized>
+        </AuthorizeView>
+    </MudContainer>
+</CascadingAuthenticationState>
+
+@code {
+    private List<ApplicationUser> users = new();
+    private string search = string.Empty;
+    private bool isLoading = true;
+
+    private IEnumerable<ApplicationUser> Filtered => string.IsNullOrWhiteSpace(search)
+        ? users
+        : users.Where(x => (x.UserName ?? string.Empty).Contains(search, StringComparison.OrdinalIgnoreCase)
+                        || (x.Email ?? string.Empty).Contains(search, StringComparison.OrdinalIgnoreCase)
+                        || (x.FullName ?? string.Empty).Contains(search, StringComparison.OrdinalIgnoreCase));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers()
+    {
+        isLoading = true;
+        users = await AuthService.GetAllUsersAsync();
+        isLoading = false;
+    }
+
+    private void OnSearchChanged(string _) => StateHasChanged();
+
+    private async Task OpenCreateAccountDialog()
+    {
+        var parameters = new DialogParameters<CreateAccountDialog>
+        {
+            { x => x.IsAdminCreating, true }
+        };
+
+        var options = new DialogOptions 
+        { 
+            MaxWidth = MaxWidth.Medium, 
+            FullWidth = true 
+        };
+
+        var dialog = await DialogService.ShowAsync<CreateAccountDialog>("Create New Account", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await LoadUsers();
+        }
+    }
+
+    private async Task OpenLoginDialog()
+    {
+        var options = new DialogOptions 
+        { 
+            MaxWidth = MaxWidth.Small, 
+            FullWidth = true,
+            BackdropClick = true,
+            CloseButton = false
+        };
+
+        var dialog = await DialogService.ShowAsync<LoginDialog>("Login", options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            Snackbar.Add("Login successful!", Severity.Success);
+            await LoadUsers();
+            StateHasChanged();
+        }
+    }
+
+    private async Task DeleteUser(string userId)
+    {
+        bool? confirm = await DialogService.ShowMessageBox(
+            "Confirm Delete",
+            "Are you sure you want to delete this user?",
+            yesText: "Delete", cancelText: "Cancel");
+
+        if (confirm == true)
+        {
+            var success = await AuthService.DeleteUserAsync(userId);
+            if (success)
+            {
+                Snackbar.Add("User deleted successfully", Severity.Success);
+                await LoadUsers();
+            }
+            else
+            {
+                Snackbar.Add("Failed to delete user", Severity.Error);
+            }
+        }
+    }
+}

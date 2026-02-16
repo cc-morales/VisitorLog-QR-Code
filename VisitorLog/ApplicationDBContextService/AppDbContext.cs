@@ -1,30 +1,30 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using VisitorLog.Models;
 
-namespace VisitorLog.ApplicationDBContextService
+namespace VisitorLog.ApplicationDBContextService;
+
+public class AppDbContext : IdentityDbContext<ApplicationUser>
 {
-    public class AppDbContext : DbContext
+    public AppDbContext(DbContextOptions<AppDbContext> options)
+        : base(options)
     {
-        public AppDbContext(DbContextOptions<AppDbContext> options)
-            : base(options)
-        {
-        }
+    }
 
-        public DbSet<VisitorModel> Visitors { get; set; } = null!;
-        public DbSet<QRCodeModel> QRCodes { get; set; } = null!;
-        public DbSet<QRSetModel> QRSets { get; set; } = null!;
-        public DbSet<LogModel> Logs { get; set; } = null!;
+    public DbSet<VisitorModel> Visitors { get; set; } = null!;
+    public DbSet<QRCodeModel> QRCodes { get; set; } = null!;
+    public DbSet<QRSetModel> QRSets { get; set; } = null!;
+    public DbSet<LogModel> Logs { get; set; } = null!;
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            // Ensure explicit table names (also set via attributes on models)
-            modelBuilder.Entity<VisitorModel>().ToTable("visitors");
-            modelBuilder.Entity<QRCodeModel>().ToTable("qrcodes");
-            modelBuilder.Entity<QRSetModel>().ToTable("qrsets");
-            modelBuilder.Entity<LogModel>().ToTable("logs");
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
 
-            base.OnModelCreating(modelBuilder);
-        }
+        // Ensure explicit table names (also set via attributes on models)
+        modelBuilder.Entity<VisitorModel>().ToTable("visitors");
+        modelBuilder.Entity<QRCodeModel>().ToTable("qrcodes");
+        modelBuilder.Entity<QRSetModel>().ToTable("qrsets");
+        modelBuilder.Entity<LogModel>().ToTable("logs");
     }
 }
 

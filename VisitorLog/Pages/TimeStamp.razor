@@ -6,6 +6,7 @@
 @inject IDialogService _dialogService
 @inject ISnackbar _snackbar
 @inject SimpleAuthStateProvider _authProvider
+@inject NavigationManager _navigationManager
 
 <CascadingAuthenticationState>
     <MudContainer MaxWidth="MaxWidth.False" Style="margin-top: 60px;">
@@ -25,16 +26,10 @@
                     </MudStack>
 
                     <MudTable Context="session" Items="FilteredSessions" Hover="true" Class="mt-4">
-                        @* <ColGroup>
-                            <col/>
-                            <col/>
-                            <col style="width: 10%;"/>
-                            <col style="width: 10%;" />
-                            <col style="width: 10%;" />
-                        </ColGroup> *@
                         <HeaderContent>
                             <MudTh>Visitor</MudTh>
                             <MudTh>QR Code</MudTh>
+                            <MudTh>Assign By</MudTh>
                             <MudTh>Time In</MudTh>
                             <MudTh>Time Out</MudTh>
                             <MudTh></MudTh>
@@ -42,6 +37,25 @@
                         <RowTemplate>
                             <MudTd DataLabel="Visitor">@(session.Visitor?.Name ?? "-")</MudTd>
                             <MudTd DataLabel="QR Code">@(session.QRCode?.QRCodeAlias ?? "-")</MudTd>
+                            <MudTd DataLabel="Assign By">
+                                @if (session.UserActions?.Count > 0)
+                                {
+                                    <MudStack Row Spacing="1">
+                                        @foreach (var userAction in session.UserActions)
+                                        {
+                                            <MudChip T="string" 
+                                                     Color="@(userAction.IsTimeIn ? Color.Primary : Color.Error)" 
+                                                     Size="Size.Small">
+                                                @userAction.UserFullName
+                                            </MudChip>
+                                        }
+                                    </MudStack>
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.caption">-</MudText>
+                                }
+                            </MudTd>
                             <MudTd DataLabel="Time In">
                                 @if (session.TimeIn.HasValue)
                                 {
@@ -78,8 +92,8 @@
             <NotAuthorized>
                 <MudPaper Class="pa-6 d-flex flex-column align-center">
                     <MudText Typo="Typo.h6">You are not authorized</MudText>
-                    <MudText Typo="Typo.body2" Class="mb-4">Please authorize to view logs.</MudText>
-                    <MudButton Color="Color.Primary" OnClick="OpenAuthorize">Authorize</MudButton>
+                    <MudText Typo="Typo.body2" Class="mb-4">Please login to view logs.</MudText>
+                    <MudButton Color="Color.Primary" OnClick="OpenAuthorize">Login</MudButton>
                 </MudPaper>
             </NotAuthorized>
         </AuthorizeView>
@@ -128,6 +142,18 @@
 
                 if (log.EntryType == LogEntryType.TimeIn)
                 {
+                    var userActions = new List<UserAction>();
+                    
+                    // Add TimeIn user (Blue chip)
+                    if (!string.IsNullOrEmpty(log.UserFullName))
+                    {
+                        userActions.Add(new UserAction 
+                        { 
+                            UserFullName = log.UserFullName, 
+                            IsTimeIn = true 
+                        });
+                    }
+
                     var session = new VisitorSession
                     {
                         Visitor = log.Visitor,
@@ -135,11 +161,26 @@
                         TimeIn = log.Timestamp
                     };
 
+                    // Check for corresponding TimeOut
                     if (i + 1 < visitorLogs.Count && visitorLogs[i + 1].EntryType == LogEntryType.TimeOut)
                     {
-                        session.TimeOut = visitorLogs[i + 1].Timestamp;
+                        var timeOutLog = visitorLogs[i + 1];
+                        session.TimeOut = timeOutLog.Timestamp;
+                        
+                        // Add TimeOut user (Red chip)
+                        if (!string.IsNullOrEmpty(timeOutLog.UserFullName))
+                        {
+                            userActions.Add(new UserAction 
+                            { 
+                                UserFullName = timeOutLog.UserFullName, 
+                                IsTimeIn = false 
+                            });
+                        }
+                        
                         i++;
                     }
+
+                    session.UserActions = userActions;
 
                     sessions.Add(session);
                 }
@@ -163,19 +204,22 @@
 
     private async Task OpenAuthorize()
     {
-        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, BackdropClick = false };
-        var dialog = await _dialogService.ShowAsync<AuthorizedDialog>("Authorize", options);
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            BackdropClick = true,  // ✅ FIXED
+            CloseButton = false
+        };
+        
+        var dialog = await _dialogService.ShowAsync<LoginDialog>("Login", options);
         var result = await dialog.Result;
 
-        if (!result?.Canceled is true && result?.Data is bool ok && ok)
+        if (!result?.Canceled is true)
         {
-            await _authProvider.SignInAsync("admin");
-            _snackbar.Add("Authorized. You are signed in.", Severity.Success);
+            _snackbar.Add("Login successful!", Severity.Success);
             await LoadAsync();
-        }
-        else
-        {
-            _snackbar.Add("Authorization failed or cancelled.", Severity.Warning);
+            StateHasChanged();
         }
     }
 
@@ -185,5 +229,12 @@
         public QRCodeModel? QRCode { get; set; }
         public DateTime? TimeIn { get; set; }
         public DateTime? TimeOut { get; set; }
+        public List<UserAction> UserActions { get; set; } = new();
+    }
+
+    private class UserAction
+    {
+        public string UserFullName { get; set; } = string.Empty;
+        public bool IsTimeIn { get; set; }  // true = TimeIn (Blue), false = TimeOut (Red)
     }
 }

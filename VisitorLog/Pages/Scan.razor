@@ -202,7 +202,9 @@
                 VisitorId = qrSet.VisitorId,
                 QRCodeId = qrSet.QRCodeId,
                 EntryType = nextEntryType,
-                Timestamp = DateTime.UtcNow
+                Timestamp = DateTime.UtcNow,
+                UserFullName = qrSet.AccountFullName
+            
             };
 
             await _logService.AddLogAsync(newLog);

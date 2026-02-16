@@ -5,7 +5,6 @@
 @inject ISnackbar _snackbar
 @inject NavigationManager _navigationManager
     
-
 <MudGrid Class="mb-4" Style="margin-top: 80px;" Spacing="0">
     <MudItem xs="12" lg="3"></MudItem>
     <MudItem xs="12" md="4" lg="6">
@@ -24,19 +23,21 @@
 @code {
     private async Task OpenAccountSignIn()
     {
-        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, BackdropClick = false };
-        var dialog = await _dialogService.ShowAsync<AuthorizedDialog>("Account Sign In", options);
+        var options = new DialogOptions 
+        { 
+            MaxWidth = MaxWidth.Small, 
+            FullWidth = true, 
+            BackdropClick = true,
+            CloseButton = false
+        };
+        
+        var dialog = await _dialogService.ShowAsync<LoginDialog>("Account Sign In", options);
         var result = await dialog.Result;
 
-        if (!result?.Canceled is true && result?.Data is bool ok && ok)
+        if (!result?.Canceled is true)
         {
-            await _authProvider.SignInAsync("admin");
-            _snackbar.Add("Authorized. You are signed in.", Severity.Success);
+            _snackbar.Add("Login successful!", Severity.Success);
             _navigationManager.NavigateTo("/qrcodes");
-        }
-        else
-        {
-            _snackbar.Add("Authorization failed or cancelled.", Severity.Warning);
         }
     }
 

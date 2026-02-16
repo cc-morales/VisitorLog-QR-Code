@@ -1,66 +1,63 @@
-using System;
-using System.Security.Claims;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components.Authorization;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
-namespace VisitorLog.Services.Auth
+namespace VisitorLog.Services.Auth;
+
+public class SimpleAuthStateProvider : AuthenticationStateProvider
 {
-    public class SimpleAuthStateProvider : AuthenticationStateProvider, IDisposable
+    private readonly LocalStorageProvider _localStorageProvider;
+
+    public SimpleAuthStateProvider(LocalStorageProvider localStorageProvider)
     {
-        private readonly TimeSpan _defaultTimeout = TimeSpan.FromMinutes(30);
-        private ClaimsPrincipal _anonymous = new(new ClaimsIdentity());
-        private ClaimsPrincipal _current;
-        private Timer? _logoutTimer;
+        _localStorageProvider = localStorageProvider;
+    }
 
-        public SimpleAuthStateProvider()
+    public override async Task<AuthenticationState> GetAuthenticationStateAsync()
+    {
+        try
         {
-            _current = _anonymous;
-        }
+            var token = await _localStorageProvider.GetTokenAsync();
 
-        public override Task<AuthenticationState> GetAuthenticationStateAsync()
-        {
-            return Task.FromResult(new AuthenticationState(_current));
-        }
-
-        public Task SignInAsync(string userName, TimeSpan? timeout = null)
-        {
-            var identity = new ClaimsIdentity(new[]
+            if (string.IsNullOrEmpty(token))
             {
-                new Claim(ClaimTypes.Name, userName)
-            }, authenticationType: "SimpleAuth");
+                return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
+            }
 
-            _current = new ClaimsPrincipal(identity);
-            NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(_current)));
+            var claims = ParseClaimsFromJwt(token);
+            var identity = new ClaimsIdentity(claims, "jwt");
+            var user = new ClaimsPrincipal(identity);
 
-            StartAutoLogout(timeout ?? _defaultTimeout);
-            return Task.CompletedTask;
+            return new AuthenticationState(user);
         }
-
-        public Task SignOutAsync()
+        catch (InvalidOperationException)
         {
-            _logoutTimer?.Change(Timeout.Infinite, Timeout.Infinite);
-            _logoutTimer?.Dispose();
-            _logoutTimer = null;
-
-            _current = _anonymous;
-            NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(_current)));
-            return Task.CompletedTask;
+            // JS interop not available yet (prerendering phase)
+            return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
         }
+    }
 
-        private void StartAutoLogout(TimeSpan timeout)
-        {
-            _logoutTimer?.Dispose();
+    public async Task MarkUserAsAuthenticated(string token)
+    {
+        await _localStorageProvider.SetTokenAsync(token);
+        var claims = ParseClaimsFromJwt(token);
+        var identity = new ClaimsIdentity(claims, "jwt");
+        var user = new ClaimsPrincipal(identity);
 
-            _logoutTimer = new Timer(_ =>
-            {
-                _ = SignOutAsync();
-            }, null, timeout, Timeout.InfiniteTimeSpan);
-        }
+        NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(user)));
+    }
 
-        public void Dispose()
-        {
-            _logoutTimer?.Dispose();
-        }
+    public async Task MarkUserAsLoggedOut()
+    {
+        await _localStorageProvider.ClearTokenAsync();
+        var anonymousUser = new ClaimsPrincipal(new ClaimsIdentity());
+        NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(anonymousUser)));
+    }
+
+    private IEnumerable<Claim> ParseClaimsFromJwt(string jwt)
+    {
+        var handler = new JwtSecurityTokenHandler();
+        var token = handler.ReadJwtToken(jwt);
+        return token.Claims;
     }
 }

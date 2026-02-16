@@ -34,7 +34,7 @@
                         <ColGroup>
                             @* <col/>
                             <col/>
-                            <col style="width: *@ 15%;"/>
+                            <col style="width: 15%;"/> *@
                         </ColGroup>
                         <HeaderContent>
                             <MudTh>QR Code</MudTh>
@@ -61,8 +61,8 @@
             <NotAuthorized>
                 <MudPaper Class="pa-6 d-flex flex-column align-center">
                     <MudText Typo="Typo.h6">You are not authorized</MudText>
-                    <MudText Typo="Typo.body2" Class="mb-4">Please authorize to manage QR codes.</MudText>
-                    <MudButton Color="Color.Primary" OnClick="OpenAuthorize">Authorize</MudButton>
+                    <MudText Typo="Typo.body2" Class="mb-4">Please login to manage QR codes.</MudText>
+                    <MudButton Color="Color.Primary" OnClick="OpenLogin">Login</MudButton>
                 </MudPaper>
             </NotAuthorized>
         </AuthorizeView>
@@ -129,21 +129,23 @@
         }
     }
 
-    private async Task OpenAuthorize()
+    private async Task OpenLogin()
     {
-        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, BackdropClick = false };
-        var dialog = await _dialogService.ShowAsync<AuthorizedDialog>("Authorize", options);
+        var options = new DialogOptions 
+        { 
+            MaxWidth = MaxWidth.Small, 
+            FullWidth = true, 
+            BackdropClick = true,
+            CloseButton = false
+        };
+        
+        var dialog = await _dialogService.ShowAsync<LoginDialog>("Login", options);
         var result = await dialog.Result;
 
-        if (!result?.Canceled is true && result?.Data is bool ok && ok)
+        if (!result?.Canceled is true)
         {
-            await _authProvider.SignInAsync("admin");
-            _snackbar.Add("Authorized. You are signed in.", Severity.Success);
+            _snackbar.Add("Login successful!", Severity.Success);
             await LoadAsync();
-        }
-        else
-        {
-            _snackbar.Add("Authorization failed or cancelled.", Severity.Warning);
         }
     }
 }

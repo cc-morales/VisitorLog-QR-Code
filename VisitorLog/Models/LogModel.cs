@@ -2,26 +2,28 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace VisitorLog.Models
+namespace VisitorLog.Models;
+
+[Table("logs")]
+public class LogModel
 {
-    [Table("logs")]
-    public class LogModel
-    {
-        [Key]
-        public Guid LogId { get; set; } = Guid.NewGuid();
+    [Key]
+    public Guid LogId { get; set; } = Guid.NewGuid();
 
-        public Guid? VisitorId { get; set; }
+    public Guid? VisitorId { get; set; }
 
-        [ForeignKey(nameof(VisitorId))]
-        public VisitorModel? Visitor { get; set; }
+    [ForeignKey(nameof(VisitorId))]
+    public VisitorModel? Visitor { get; set; }
 
-        public Guid? QRCodeId { get; set; }
+    public Guid? QRCodeId { get; set; }
 
-        [ForeignKey(nameof(QRCodeId))]
-        public QRCodeModel? QRCode { get; set; }
+    [ForeignKey(nameof(QRCodeId))]
+    public QRCodeModel? QRCode { get; set; }
 
-        public LogEntryType EntryType { get; set; }
+    public LogEntryType EntryType { get; set; }
 
-        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
-    }
+    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+
+    // User FullName from account who performed the scan
+    public string? UserFullName { get; set; }
 }

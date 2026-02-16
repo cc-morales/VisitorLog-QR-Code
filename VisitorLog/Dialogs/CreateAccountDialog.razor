@@ -1,0 +1,98 @@
+@inject IAuthenticationService AuthService
+@inject ISnackbar Snackbar
+@using VisitorLog.DTOs
+
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.h6" GutterBottom="true">Create New Account</MudText>
+        
+        <MudTextField @bind-Value="model.Username" 
+                      Label="Username" 
+                      Variant="Variant.Outlined" 
+                      Margin="Margin.Dense"
+                      Required="true" 
+                      Class="mb-3" />
+        
+        <MudTextField @bind-Value="model.Email" 
+                      Label="Email" 
+                      Variant="Variant.Outlined" 
+                      Margin="Margin.Dense"
+                      Required="true" 
+                      InputType="InputType.Email"
+                      Class="mb-3" />
+        
+        <MudTextField @bind-Value="model.FullName" 
+                      Label="Full Name" 
+                      Variant="Variant.Outlined" 
+                      Margin="Margin.Dense"
+                      Required="true" 
+                      Class="mb-3" />
+        
+        <MudTextField @bind-Value="model.Password" 
+                      Label="Password" 
+                      Variant="Variant.Outlined" 
+                      Margin="Margin.Dense"
+                      InputType="InputType.Password" 
+                      Required="true" 
+                      Class="mb-3" />
+        
+        @if (IsAdminCreating)
+        {
+            <MudCheckBox @bind-Value="model.IsAdmin" 
+                         Label="Admin Account" 
+                         Color="Color.Primary" />
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit" Disabled="isLoading">
+            @if (isLoading)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+            }
+            else
+            {
+                <span>Create</span>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public bool IsAdminCreating { get; set; }
+
+    private CreateAccountDto model = new();
+    private bool isLoading = false;
+
+    private async Task Submit()
+    {
+        if (string.IsNullOrWhiteSpace(model.Username) || string.IsNullOrWhiteSpace(model.Password) ||
+            string.IsNullOrWhiteSpace(model.Email) || string.IsNullOrWhiteSpace(model.FullName))
+        {
+            Snackbar.Add("All fields are required", Severity.Warning);
+            return;
+        }
+
+        isLoading = true;
+        var result = await AuthService.CreateAccountAsync(
+            model.Username, 
+            model.Email, 
+            model.FullName, 
+            model.Password,
+            model.IsAdmin);
+        isLoading = false;
+
+        if (result.Success)
+        {
+            Snackbar.Add(result.Message, Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else
+        {
+            Snackbar.Add(result.Message, Severity.Error);
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

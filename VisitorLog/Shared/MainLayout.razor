@@ -1,5 +1,7 @@
 ﻿@inherits LayoutComponentBase
 
+@using Dialogs
+
 @inject IDialogService _dialogService
 @inject SimpleAuthStateProvider _authProvider
 @inject ISnackbar _snackbar
@@ -22,6 +24,19 @@
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
         <MudText Typo="Typo.h6">@GetPageTitle()</MudText>
         <MudSpacer />
+        <CascadingAuthenticationState>
+            <AuthorizeView>
+                <Authorized>
+                    <MudText Typo="Typo.body2" Class="mr-4">Welcome, @context.User.FindFirst("FullName")?.Value</MudText>
+                    <MudButton Variant="Variant.Filled" 
+                               Color="Color.Error" 
+                               StartIcon="@Icons.Material.Filled.Logout"
+                               OnClick="HandleLogout">
+                        Logout
+                    </MudButton>
+                </Authorized>
+            </AuthorizeView>
+        </CascadingAuthenticationState>
     </MudAppBar>
     <MudDrawer @bind-Open="@_open" Breakpoint="@_breakpoint" Elevation="1" Variant="@DrawerVariant.Responsive" Color="Color.Inherit">
         <MudDrawerHeader Class="d-felx justify-content-center align-items-center">
@@ -33,6 +48,7 @@
             <MudNavLink Class="custom-button" Href="/registration" Icon="@Icons.Material.Filled.PersonAdd" IconColor="Color.Error" Match="NavLinkMatch.All">REGISTRATION</MudNavLink>
             <MudNavLink Class="custom-button" Href="/scan" Icon="@Icons.Material.Filled.QrCodeScanner" IconColor="Color.Error" Match="NavLinkMatch.All">SCAN</MudNavLink>
             <MudNavLink Class="custom-button" Href="/timestamp" Icon="@Icons.Material.Filled.FormatListBulleted" IconColor="Color.Error" Match="NavLinkMatch.All">TIME STAMP</MudNavLink>
+            <MudNavLink Class="custom-button" Href="/accounts" Icon="@Icons.Material.Filled.LockPerson" IconColor="Color.Error" Match="NavLinkMatch.All">ACCOUNTS</MudNavLink>
         </MudNavMenu>
     </MudDrawer>
     <MudMainContent Class="pa-2">
@@ -70,26 +86,9 @@
             "/registration" => "REGISTRATION",
             "/scan" => "QR PASS SCANNING (TIMEIN/TIMEOUT)",
             "/timestamp" => "TIME STAMP",
+            "/accounts" => "ACCOUNTS",
             _ => "V.I.S.I.T.S"
         };
-    }
-
-    private async Task RegisterQrClicked()
-    {
-        var authorized = await ShowAuthorizeDialogAsync();
-
-        if (authorized)
-        {
-            await _authProvider.SignInAsync("admin");
-
-            _navigationManager.NavigateTo("/visitors");
-
-            _snackbar.Add("Authorized. You are signed in.", Severity.Success);
-        }
-        else
-        {
-            _snackbar.Add("Authorization failed or cancelled.", Severity.Warning);
-        }
     }
 
     private async Task<bool> ShowAuthorizeDialogAsync()
@@ -108,6 +107,13 @@
         if (result?.Canceled is true) return false;
 
         return result?.Data is bool b && b;
+    }
+
+    private async Task HandleLogout()
+    {
+        await _authProvider.MarkUserAsLoggedOut();
+        _snackbar.Add("Logged out successfully", Severity.Info);
+        _navigationManager.NavigateTo("/", true);
     }
 
     public void Dispose()

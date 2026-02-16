@@ -8,11 +8,12 @@
 @inject IDialogService _dialogService
 @inject ISnackbar _snackbar
 @inject SimpleAuthStateProvider _authProvider
+@inject NavigationManager _navigationManager
 
 <CascadingAuthenticationState>
     <MudContainer MaxWidth="MaxWidth.False" Style="margin-top: 60px;">
         <AuthorizeView>
-            <Authorized>
+            <Authorized Context="authContext">
                 <MudPaper>
                     <MudStack Class="pa-1 header-table" Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
                         <MudText Typo="Typo.h6">Visitor Registration</MudText>
@@ -37,14 +38,14 @@
                             <MudTh>Contact Number</MudTh>
                             <MudTh>Purpose</MudTh>
                             <MudTh>QR Code</MudTh>
+                            <MudTh>Assigned By</MudTh>
                             <MudTh></MudTh>
                         </HeaderContent>
                         <RowTemplate>
                             <MudTd DataLabel="Picture">
                                 @if (visitor.Picture?.Length > 0)
                                 {
-                                        <MudAvatar
-                                               Size="Size.Large" >
+                                    <MudAvatar Size="Size.Large">
                                         <MudImage Src="@($"data:image/png;base64,{Convert.ToBase64String(visitor.Picture)}")"
                                                   Alt="@visitor.Name"
                                                   Width="50"
@@ -71,6 +72,16 @@
                                     <MudChip T="string" Color="Color.Default" Size="Size.Small">Not Set</MudChip>
                                 }
                             </MudTd>
+                            <MudTd DataLabel="Assigned By">
+                                @if (qrSetCache.TryGetValue(visitor.VisitorId, out var setInfo) && setInfo != null && !string.IsNullOrEmpty(setInfo.AccountFullName))
+                                {
+                                    <MudChip T="string" Color="Color.Info" Size="Size.Small">@setInfo.AccountFullName</MudChip>
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.caption">-</MudText>
+                                }
+                            </MudTd>
                             <MudTd Class="text-end">
                                 @if (qrSetCache.TryGetValue(visitor.VisitorId, out var existingSet) && existingSet != null)
                                 {
@@ -85,7 +96,7 @@
                                     <MudIconButton Icon="@Icons.Material.Filled.QrCode" 
                                                    Color="Color.Primary" 
                                                    Size="Size.Medium" 
-                                                   OnClick="@(() => SetQRCode(visitor))" 
+                                                   OnClick="@(() => SetQRCode(visitor, authContext))" 
                                                    Title="Set QR Code" />
                                 }
                                 <MudIconButton Icon="@Icons.Material.Filled.Edit" 
@@ -94,7 +105,7 @@
                                                OnClick="@(() => EditVisitor(visitor))" />
                                 <MudIconButton Icon="@Icons.Material.Filled.Delete" 
                                                Color="Color.Error" 
-                                               Size="Size.Medium"
+                                               Size="Size.Medium" 
                                                OnClick="@(() => DeleteVisitor(visitor))" />
                             </MudTd>
                         </RowTemplate>
@@ -104,8 +115,8 @@
             <NotAuthorized>
                 <MudPaper Class="pa-6 d-flex flex-column align-center">
                     <MudText Typo="Typo.h6">You are not authorized</MudText>
-                    <MudText Typo="Typo.body2" Class="mb-4">Please authorize to register visitors.</MudText>
-                    <MudButton Color="Color.Primary" OnClick="OpenAuthorize">Authorize</MudButton>
+                    <MudText Typo="Typo.body2" Class="mb-4">Please login to register visitors.</MudText>
+                    <MudButton Color="Color.Primary" OnClick="OpenAuthorize">Login</MudButton>
                 </MudPaper>
             </NotAuthorized>
         </AuthorizeView>
@@ -125,8 +136,10 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (firstRender) 
+        {
             await LoadAsync();
+        }
     }
 
     private async Task LoadAsync()
@@ -145,8 +158,10 @@
 
     private void OnSearchChanged(string _) => StateHasChanged();
 
-    private async Task SetQRCode(VisitorModel visitor)
+    private async Task SetQRCode(VisitorModel visitor, AuthenticationState authContext)
     {
+        var currentUserFullName = authContext.User.FindFirst("FullName")?.Value;
+        
         var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await _dialogService.ShowAsync<QRCodeSelectDialog>("Select QR Code", options);
         var result = await dialog.Result;
@@ -156,7 +171,8 @@
             var qrSet = new QRSetModel
             {
                 VisitorId = visitor.VisitorId,
-                QRCodeId = qr.QRCodeId
+                QRCodeId = qr.QRCodeId,
+                AccountFullName = currentUserFullName ?? "Unknown"
             };
 
             var success = await _qrSetService.AddQRSetAsync(qrSet);
@@ -164,7 +180,7 @@
             if (success)
             {
                 await LoadAsync();
-                _snackbar.Add($"QR Code '{qr.QRCodeAlias}' assigned to {visitor.Name}", Severity.Success);
+                _snackbar.Add($"QR Code '{qr.QRCodeAlias}' assigned to {visitor.Name} by {currentUserFullName}", Severity.Success);
             }
             else
             {
@@ -237,19 +253,22 @@
 
     private async Task OpenAuthorize()
     {
-        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, BackdropClick = false };
-        var dialog = await _dialogService.ShowAsync<AuthorizedDialog>("Authorize", options);
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            BackdropClick = true,
+            CloseButton = false
+        };
+        
+        var dialog = await _dialogService.ShowAsync<LoginDialog>("Login", options);
         var result = await dialog.Result;
 
-        if (!result?.Canceled is true && result?.Data is bool ok && ok)
+        if (!result?.Canceled is true)
         {
-            await _authProvider.SignInAsync("admin");
-            _snackbar.Add("Authorized. You are signed in.", Severity.Success);
+            _snackbar.Add("Login successful!", Severity.Success);
             await LoadAsync();
-        }
-        else
-        {
-            _snackbar.Add("Authorization failed or cancelled.", Severity.Warning);
+            StateHasChanged();
         }
     }
 }
