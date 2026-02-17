@@ -51,7 +51,17 @@ namespace VisitorLog.Services.VisitorManagementService
         {
             var visitor = await _context.Visitors.FindAsync(visitorId);
             if (visitor != null)
-            {       
+            {
+                var relatedLogs = await _context.Logs
+                    .Where(l => l.VisitorId == visitorId)
+                    .ToListAsync();
+                _context.Logs.RemoveRange(relatedLogs);
+
+                var relatedQRSets = await _context.QRSets
+                    .Where(q => q.VisitorId == visitorId)
+                    .ToListAsync();
+                _context.QRSets.RemoveRange(relatedQRSets);
+
                 _context.Visitors.Remove(visitor);
                 await _context.SaveChangesAsync();
             }
