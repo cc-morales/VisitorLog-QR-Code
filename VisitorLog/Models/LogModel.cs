@@ -22,7 +22,7 @@ public class LogModel
 
     public LogEntryType EntryType { get; set; }
 
-    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+    public DateTime Timestamp { get; set; } = DateTime.Now;
 
     // User FullName from account who performed the scan
     public string? UserFullName { get; set; }
