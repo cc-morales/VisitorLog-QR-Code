@@ -2,6 +2,7 @@
 @using VisitorLog.Services.VisitorManagementService
 @using Microsoft.AspNetCore.Components.Forms
 @inject IVisitorManagementService _visitorService
+@inject ISnackbar _snackbar
 
 <MudDialog>
     <TitleContent>
@@ -133,15 +134,21 @@
     {
         if (cameraStreamer != null)
         {
-            var imageDataBase64 = await cameraStreamer.GetCurrentFrameAsync();
-            if (!string.IsNullOrEmpty(imageDataBase64))
+            try
             {
-                var data = imageDataBase64.IndexOf(',') >= 0 
-                    ? imageDataBase64[(imageDataBase64.IndexOf(',') + 1)..] 
-                    : imageDataBase64;
-                
-                Model.Picture = Convert.FromBase64String(data);
-                pictureBase64 = $"data:image/png;base64,{data}";
+                var imageDataBase64 = await cameraStreamer.GetCurrentFrameAsync();
+                if (!string.IsNullOrEmpty(imageDataBase64))
+                {
+                    var data = imageDataBase64.IndexOf(',') >= 0
+                        ? imageDataBase64[(imageDataBase64.IndexOf(',') + 1)..]
+                        : imageDataBase64;
+
+                    Model.Picture = Convert.FromBase64String(data);
+                    pictureBase64 = $"data:image/png;base64,{data}";
+                }
+            } catch(Exception e)
+            {
+                _snackbar.Add("Error capturing image, please try again.", Severity.Error);
             }
         }
 
