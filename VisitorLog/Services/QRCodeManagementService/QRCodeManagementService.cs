@@ -15,11 +15,12 @@ namespace VisitorLog.Services.QRCodeManagementService
         }
 
         public async Task<List<QRCodeModel>> GetQRCodesAsync()
-        {
+        {   
             try
             {
                 return await _context.QRCodes
                     .AsNoTracking()
+                    .OrderBy( c => c.QRCodeAlias)
                     .ToListAsync();
             }
             catch (OperationCanceledException)
@@ -59,7 +60,7 @@ namespace VisitorLog.Services.QRCodeManagementService
         {
             using var qrGenerator = new QRCodeGenerator();
             using var qrCodeData = qrGenerator.CreateQrCode(qrCodeText, QRCodeGenerator.ECCLevel.Q);
-            using var qrCode = new PngByteQRCode(qrCodeData);
+            using var qrCode = new BitmapByteQRCode(qrCodeData);
             return qrCode.GetGraphic(20);
         }
     }

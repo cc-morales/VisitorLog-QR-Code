@@ -132,7 +132,10 @@
         ? items
         : items.Where(x => (x.Name ?? string.Empty).Contains(search, StringComparison.OrdinalIgnoreCase)
                         || (x.ContactNumber ?? string.Empty).Contains(search, StringComparison.OrdinalIgnoreCase)
-                        || (x.PurposeOfVisit ?? string.Empty).Contains(search, StringComparison.OrdinalIgnoreCase));
+                        || (x.PurposeOfVisit ?? string.Empty).Contains(search, StringComparison.OrdinalIgnoreCase)
+                        || (x.Address ?? string.Empty).Contains(search, StringComparison.OrdinalIgnoreCase)
+                        || (qrSetCache.TryGetValue(x.VisitorId, out var qrSet) && qrSet?.QRCode?.QRCodeAlias != null && qrSet.QRCode.QRCodeAlias.Contains(search, StringComparison.OrdinalIgnoreCase))
+                        || (qrSetCache.TryGetValue(x.VisitorId, out var assignedSet) && !string.IsNullOrEmpty(assignedSet?.AccountFullName) && assignedSet.AccountFullName.Contains(search, StringComparison.OrdinalIgnoreCase)));
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
